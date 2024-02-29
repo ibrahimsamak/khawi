@@ -139,7 +139,7 @@ exports.addOrder = async (req, reply) => {
      
           } 
 
-          let check_category= await Product_Price.findOne({$and:[{place_id:PoinInPolygon[0]._id}, {category_id:req.body.category_id}]})
+          let check_category= await Product_Price.findOne({$and:[{place_id:PoinInPolygon[0]._id}, { category_id:req.body.category_id }]})
           if(!check_category){
             let rs = new User_Uncovered({
               user_id: userId,
@@ -163,9 +163,11 @@ exports.addOrder = async (req, reply) => {
               );
             return;
           }
-
           _supplier = check_category.supplier_id 
-
+          for await(var i of req.body.extra){
+            const _sub_category = await SubCategory.findById(i);
+            total += Number(_sub_category.price)
+          }
           if(req.body.couponCode && req.body.couponCode != ""){
             let obj =  await check_coupon(req.user._id, req.body.couponCode, req.body.sub_category_id)
             if(obj == null){
@@ -186,8 +188,8 @@ exports.addOrder = async (req, reply) => {
             total_discount = obj.discount;
             total_tax = obj.total_tax
           }else{
-            total = (Number(sub_category.price) * Number(tax.value)) + Number(sub_category.price)
-            total_tax = (Number(sub_category.price) * Number(tax.value))
+            total = (Number(total) * Number(tax.value)) + Number(total)
+            total_tax = (Number(total) * Number(tax.value))
           }
           var address = req.body.address;
           if(!req.body.address || req.body.address == ""){
@@ -209,6 +211,7 @@ exports.addOrder = async (req, reply) => {
             let _rs = await rs.save();
             address = _rs._id;
           }
+          
           let Orders = new Order({
             lat: req.body.lat,
             lng: req.body.lng,           
@@ -235,7 +238,7 @@ exports.addOrder = async (req, reply) => {
             provider: _supplier,
             supervisor: null,
             place: PoinInPolygon[0]._id,
-            extra: [],
+            extra: req.body.extra,
             loc: {
               type: "Point",
               coordinates: [req.body.lat, req.body.lng],
@@ -829,10 +832,10 @@ exports.getOrderTotal = async (req, reply) => {
     var total = 0;
     var _coupon = req.body.coupon;
     const sp = await coupon.findOne({$and: [{ coupon: _coupon }]});
-    const sub_category = await SubCategory.findById(req.body.sub_category_id);
-    var total = Number(sub_category.price);
+    // const sub_category = await SubCategory.findById(req.body.sub_category_id);
+    // var total = Number(sub_category.price);
     for await(var i of req.body.extra){
-      const _sub_category = await SubCategory.findById(req.body.sub_category_id);
+      const _sub_category = await SubCategory.findById(i);
       total += Number(_sub_category.price)
     }
 

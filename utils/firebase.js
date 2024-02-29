@@ -1,14 +1,14 @@
 const firebase = require("firebase");
 
 const config = {
-  apiKey: "AIzaSyAEIVpZnvSbD6Bj4LFJ06XCuiJCQc7cN90",
-  authDomain: "jazapp-c3a3c.firebaseapp.com",
-  databaseURL: "https://jazapp-c3a3c-default-rtdb.europe-west1.firebasedatabase.app/",
-  projectId: "jazapp-c3a3c",
-  storageBucket: "jazapp-c3a3c.appspot.com",
-  messagingSenderId: "198605339648",
-  appId: "1:198605339648:web:8543efb0da811fb025ece5",
-  measurementId: "G-1HPD4B1TKS"
+  apiKey: "AIzaSyAQQEGLb_9I7iet31Tzs0ql82hPpwL_K0o",
+  authDomain: "fazaa-12415.firebaseapp.com",
+  databaseURL: "https://fazaa-12415-default-rtdb.firebaseio.com",
+  projectId: "fazaa-12415",
+  storageBucket: "fazaa-12415.appspot.com",
+  messagingSenderId: "466803789786",
+  appId: "1:466803789786:web:a2876d23276b502985bae3",
+  measurementId: "G-6DW753R2EL"
 };
 
 const Firebase = firebase.initializeApp(config);

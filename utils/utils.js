@@ -338,7 +338,7 @@ exports.CreateGeneralNotification = function (
     xhr.open("POST", "https://fcm.googleapis.com/fcm/send");
     xhr.setRequestHeader(
       "Authorization",
-      "key=AAAALj3M_AA:APA91bHkzRCHZ4duGpT9hCn0L0MvyvDJN6XD5FgMYvJN0WRjHqY9Lj2IaiUkY4p3J6pI9SLxGWlR8bU478xr1Y7YnY1lnw11JOW-Hj8srllLFdvlmDqzIHljKRXRP42Mt65saXA0umFv"
+      "key=AAAAbK-sj9o:APA91bGuybNZ8Z5t92aAvWb83iLvGmHgcl3kmxpERQFYeH96SmdwaCPrKD7ZYQZyeonezalAi-iB-SIYpNFnG3XIlHMYZbEA3mvbP0RvVUUHprVFzQfBjU4JEe_Hha5nq4nx1jktE2Sk"
     );
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(data);
@@ -392,7 +392,7 @@ exports.CreateNotificationMultiple = function (deviceId, title, msg, order_id) {
     xhr.open("POST", "https://fcm.googleapis.com/fcm/send");
     xhr.setRequestHeader(
       "Authorization",
-      "key=AAAALj3M_AA:APA91bHkzRCHZ4duGpT9hCn0L0MvyvDJN6XD5FgMYvJN0WRjHqY9Lj2IaiUkY4p3J6pI9SLxGWlR8bU478xr1Y7YnY1lnw11JOW-Hj8srllLFdvlmDqzIHljKRXRP42Mt65saXA0umFv"
+      "key=AAAAbK-sj9o:APA91bGuybNZ8Z5t92aAvWb83iLvGmHgcl3kmxpERQFYeH96SmdwaCPrKD7ZYQZyeonezalAi-iB-SIYpNFnG3XIlHMYZbEA3mvbP0RvVUUHprVFzQfBjU4JEe_Hha5nq4nx1jktE2Sk"
     );
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(data);
