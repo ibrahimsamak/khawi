@@ -3,7 +3,7 @@ const firebase = require("firebase");
 const config = {
   apiKey: "AIzaSyAQQEGLb_9I7iet31Tzs0ql82hPpwL_K0o",
   authDomain: "fazaa-12415.firebaseapp.com",
-  databaseURL: "https://fazaa-12415-default-rtdb.firebaseio.com",
+  databaseURL: "https://fazaa-12415-default-rtdb.firebaseio.com/",
   projectId: "fazaa-12415",
   storageBucket: "fazaa-12415.appspot.com",
   messagingSenderId: "466803789786",
