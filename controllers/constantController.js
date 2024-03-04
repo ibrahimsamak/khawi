@@ -114,9 +114,12 @@ exports.getAllCategoryAndSubCategory = async (req, reply) => {
   try {
     const language = req.headers["accept-language"];
     var query1 = {}
+    var query = { isDeleted: false }
  
-
-    const cats = await Category.find({isDeleted: false}).sort({ sort: 1 });
+    if(req.query.id && req.query.id != ""){
+      query = {_id: req.query.id , isDeleted: false}
+    }
+    const cats = await Category.find(query).sort({ sort: 1 });
     var arr = [];
     for await(const element of cats){
       var newObject = element.toObject();
@@ -134,9 +137,10 @@ exports.getAllCategoryAndSubCategory = async (req, reply) => {
             ]}
           ]
         }
-      }else{
+      }
+      else{
         query1 = {
-          $and:[{isDeleted: false},{category_id:newObject._id }]
+          $and:[{isDeleted: false},{category_id: newObject._id }]
         }
       }
       console.log(query1)
