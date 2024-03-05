@@ -1138,7 +1138,7 @@ exports.block = async (req, reply) => {
 
 exports.testsend = async (req, reply) => {
   const language = req.headers["accept-language"];
-  var msg = "مرحبا بكم في تطبيق شعلة كود التفعيل الخاص بكم 1233";
+  var msg = "مرحبا بكم في تطبيق فزعة كود التفعيل الخاص بكم 1233";
   // const sms_code = makeid(4);
   // const user = await employee.findByIdAndUpdate(
   //   req.body.id,

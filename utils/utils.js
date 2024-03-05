@@ -232,11 +232,11 @@ exports.sendSMS = async function(number, from, to, code){
   let _config = {
     headers: {
       "Content-Type": "application/json",
-      Authorization: "Bearer " + "aS1v2wbaF43MMY1txF5i"
+      Authorization: "Bearer " + "8xjeMpt-PBVa_e7SBVS4"
     },
   };
   let body = {
-    "src": "JAZCOM",
+    "src": "faz3h-sa",
     "body": code,
     "dests": [number]
   }

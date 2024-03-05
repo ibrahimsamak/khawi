@@ -591,7 +591,7 @@ exports.updateOrder = async (req, reply) => {
         var code = "1234"; // makeid(6)
         msg = msg_updated + " كود العملية هو: " + code;
         
-        var subs = await SubCategory.find({_id:{$in:req.body.extra}})
+        var subs = await SubCategory.find({_id:{$in: req.body.extra}})
         var price = 0;
         subs.forEach(element => { price += element.price });
         var new_total = (Number(price) * Number(tax.value)) + Number(price)
