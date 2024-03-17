@@ -52,6 +52,37 @@ const schema = mongoose.Schema({
   },
 });
 
+const CategorySchema = mongoose.Schema({
+  arName: {
+    type: String,
+    required: [true, "arabic name is required"],
+  },
+  enName: {
+    type: String,
+    required: [true, "english name is required"],
+  },
+  enDescription: {
+    type: String,
+  },
+  arDescription: {
+    type: String,
+  },
+  image: {
+    type: String,
+  },
+  main_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "main",
+    required: [true, "main category is required"],
+  },
+  price: {
+    type: Number,
+  },
+  isDeleted: {
+    type: Boolean,
+  },
+});
+
 const subschema = mongoose.Schema({
   arName: {
     type: String,
@@ -220,7 +251,8 @@ const PlaceDeliverySchema = mongoose.Schema({
 Productschema.index({ category_id: 1 });
 ProductPlacePriceSchema.index({ product_id: 1 });
 
-const Category = mongoose.model("category", schema);
+const Main = mongoose.model("main", schema);
+const Category = mongoose.model("category", CategorySchema);
 const SubCategory = mongoose.model("subcategory", subschema);
 const Supplier = mongoose.model("supplier", Supplierschema);
 const Supervisor = mongoose.model("supervisor", SupervisorSchema);
@@ -228,6 +260,7 @@ const Product = mongoose.model("product", Productschema);
 const product_price = mongoose.model("product_price", ProductPlacePriceSchema);
 const Place_Delivery = mongoose.model("place_deliveries", PlaceDeliverySchema);
 
+exports.Main = Main;
 exports.Category = Category;
 exports.SubCategory = SubCategory;
 exports.Supplier = Supplier;

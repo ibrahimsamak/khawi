@@ -60,6 +60,7 @@ const {
   CreateNotificationMultiple,
   NewPayment,
   check_coupon,
+  NewPoint,
 } = require("../utils/utils");
 const { success, errorAPI } = require("../utils/responseApi");
 const { string, number } = require("@hapi/joi");
@@ -92,6 +93,7 @@ exports.addOrder = async (req, reply) => {
       check_request_params(req.body, validationArray, async function (response) {
         if (response.success) {
           var userId = req.user._id;
+          var point =  await setting.findOne({ code: "POINT" });
           const userObj = await Users.findById(userId);
           const tax = await setting.findOne({ code: "TAX" });
           const sub_category = await SubCategory.findById(req.body.sub_category_id);
@@ -212,6 +214,7 @@ exports.addOrder = async (req, reply) => {
             address = _rs._id;
           }
           
+          await NewPoint(userId, Number(point.value))
           let Orders = new Order({
             lat: req.body.lat,
             lng: req.body.lng,           

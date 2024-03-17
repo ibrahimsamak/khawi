@@ -529,6 +529,15 @@ exports.NewPayment = async function (user_id, order_no ,to, sign, amount, paymen
   return _user;
 };
 
+exports.NewPoint = async function (user_id, amount) {
+  const _user = await Users.findByIdAndUpdate(
+    user_id,
+    { $inc: { points: amount } },
+    { new: true }
+  );
+  return _user;
+};
+
 exports.check_coupon = async function check_coupon(user_id, _coupon, sub_category_id){
   var today = moment().tz("Asia/Riyadh");
   const tax = await setting.findOne({ code: "TAX" });

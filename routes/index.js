@@ -270,6 +270,36 @@ const admin_routes = [
     beforeHandler: [auth.getAdminToken],
     handler: constantController.deleteAdvs,
   },
+    //main
+  {
+    method: "GET",
+    url: "/api/constant/main",
+    handler: constantController.getMain,
+  },
+  {
+    method: "GET",
+    url: "/api/constant/main/:id",
+    handler: constantController.getSingleMain,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/main",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.addMain,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/main/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.updateMain,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/delete-main/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.deleteMain,
+  },
+
   //category
   {
     method: "GET",
@@ -950,8 +980,13 @@ const mobile_routes = [
 
   {
     method: "GET",
-    url: "/api/mobile/constant/category",
+    url: "/api/mobile/constant/main",
     handler: constantController.getAllCategoryAndSubCategory,
+  },
+  {
+    method: "GET",
+    url: "/api/mobile/constant/category",
+    handler: constantController.getAllSubCategoryAndSubSubCategory,
   },
   {
     method: "GET",

@@ -29,7 +29,7 @@ const {
 } = require("../models/Constant");
 const { Users } = require("../models/User");
 const { employee } = require("../models/Employee");
-const { Place_Delivery, Supplier, Category, SubCategory, Product_Price } = require("../models/Product");
+const { Place_Delivery, Supplier, Category, SubCategory, Product_Price, Main } = require("../models/Product");
 const { mail_general } = require("../utils/utils");
 
 const { success, errorAPI } = require("../utils/responseApi");
@@ -49,32 +49,51 @@ const { Adv } = require("../models/adv");
 exports.getHomeRequest = async (req, reply) => {
   try {
     const language = req.headers["accept-language"];
-    const cats = await Category.find({isDeleted: false}).sort({ sort: 1 });
-    var arr = [];
-    for await(const element of cats){
-      var newObject = element.toObject();
-      var subs = []
-      var _subs = await SubCategory.find({$and:[{isDeleted: false},{category_id:newObject._id }]}).sort({ _id: -1 });
-      for await(const i of _subs){
-        var _newObject = i.toObject();
+    const mains = await Main.find({isDeleted: false}).sort({ sort: 1 });
+    var return_arr = []
+    for await (const idx of mains) {
+      var mainObject = idx.toObject();
+      var cats_arr = []
+      const cats = await Category.find({$and:[{isDeleted: false},{main_id: idx._id}]}).sort({ sort: 1 });
+      for await(const element of cats) {
+        var catCategory = element.toObject();
+        var subs = []
+        var _subs = await SubCategory.find({$and:[{isDeleted: false},{category_id:catCategory._id }]}).sort({ _id: -1 });
+        for await(const i of _subs) {
+          var _newObject = i.toObject();
+          var obj = {
+            _id: _newObject._id,
+            price: _newObject.price,
+            title: _newObject[`${language}Name`],
+            description: _newObject[`${language}Description`],
+            image: _newObject.image,
+            type:"sub_sub_category",
+          };
+          subs.push(obj)
+        }
         var obj = {
-          _id: _newObject._id,
-          price: _newObject.price,
-          title: _newObject[`${language}Name`],
-          description: _newObject[`${language}Description`],
-          image: _newObject.image,
+          _id: catCategory._id,
+          price: catCategory.price,
+          title: catCategory[`${language}Name`],
+          description: catCategory[`${language}Description`],
+          image: catCategory.image,
+          type:"sub_category",
+          sub:subs
         };
-        subs.push(obj)
+        cats_arr.push(obj)
       }
       var obj = {
-        _id: newObject._id,
-        title: newObject[`${language}Name`],
-        description: newObject[`${language}Description`],
-        image: newObject.image,
-        sub:subs
+        _id: mainObject._id,
+        title: mainObject[`${language}Name`],
+        description: mainObject[`${language}Description`],
+        image: mainObject.image,
+        type:"main_category",
+        category: cats_arr
       };
-      arr.push(obj);
+      // arr.push(obj);
+      return_arr.push(obj);
     }
+
     var arr2 = [];
     const slider = await Adv.find({}).sort({ _id: -1 });
     for await(const element of slider){
@@ -83,13 +102,14 @@ exports.getHomeRequest = async (req, reply) => {
         _id: newObject._id,
         title: newObject[`${language}Title`],
         description: newObject[`${language}Description`],
-        image:newObject.image
+        image: newObject.image,
+        type: newObject.type
       };
       arr2.push(obj);
     }
 
     var res_obj = {
-      category: arr,
+      category: return_arr,
       slider: arr2
     }
     reply
@@ -110,7 +130,7 @@ exports.getHomeRequest = async (req, reply) => {
   }
 };
 
-exports.getAllCategoryAndSubCategory = async (req, reply) => {
+exports.getAllSubCategoryAndSubSubCategory = async (req, reply) => {
   try {
     const language = req.headers["accept-language"];
     var query1 = {}
@@ -175,6 +195,79 @@ exports.getAllCategoryAndSubCategory = async (req, reply) => {
           MESSAGE_STRING_ARABIC.SUCCESS,
           MESSAGE_STRING_ENGLISH.SUCCESS,
           arr
+        )
+      );
+
+    return;
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getAllCategoryAndSubCategory = async (req, reply) => {
+  try {
+    const language = req.headers["accept-language"];
+    var query1 = {}
+    var query = { isDeleted: false }
+ 
+    if(req.query.id && req.query.id != ""){
+      query = {_id: req.query.id , isDeleted: false}
+    }
+ 
+    var return_arr = []
+    const mains = await Main.find(query).sort({ sort: 1 });
+    for await (const idx of mains) {
+      var mainObject = idx.toObject();
+      var cats_arr = []
+      const cats = await Category.find({$and:[{isDeleted: false},{main_id: idx._id}]}).sort({ sort: 1 });
+      for await(const element of cats) {
+        var catCategory = element.toObject();
+        var subs = []
+        var _subs = await SubCategory.find({$and:[{isDeleted: false},{category_id:catCategory._id }]}).sort({ _id: -1 });
+        for await(const i of _subs) {
+          var _newObject = i.toObject();
+          var obj = {
+            _id: _newObject._id,
+            price: _newObject.price,
+            title: _newObject[`${language}Name`],
+            description: _newObject[`${language}Description`],
+            image: _newObject.image,
+            type:"sub_sub_category",
+          };
+          subs.push(obj)
+        }
+        var obj = {
+          _id: catCategory._id,
+          price: catCategory.price,
+          title: catCategory[`${language}Name`],
+          description: catCategory[`${language}Description`],
+          image: catCategory.image,
+          type:"sub_category",
+          sub:subs
+        };
+        cats_arr.push(obj)
+      }
+      var obj = {
+        _id: mainObject._id,
+        title: mainObject[`${language}Name`],
+        description: mainObject[`${language}Description`],
+        image: mainObject.image,
+        type:"main_category",
+        category: cats_arr
+      };
+      // arr.push(obj);
+      return_arr.push(obj);
+    }
+
+    reply
+      .code(200)
+      .send(
+        success(
+          language,
+          200,
+          MESSAGE_STRING_ARABIC.SUCCESS,
+          MESSAGE_STRING_ENGLISH.SUCCESS,
+          return_arr
         )
       );
 
@@ -2354,6 +2447,7 @@ exports.addWelcome = async (req, reply) => {
         enDescription: req.raw.body.enDescription,
         isDriver: req.raw.body.isDriver,
         icon: img,
+        type: req.raw.body.type
       });
       var _return = handleError(Advs.validateSync());
       if (_return.length > 0) {
@@ -2424,6 +2518,7 @@ exports.updateWelcome = async (req, reply) => {
           enDescription: req.raw.body.enDescription,
           isDriver: req.raw.body.isDriver,
           icon: img,
+          type: req.raw.body.type
         },
         { new: true, runValidators: true },
         function (err, model) {
@@ -2460,6 +2555,7 @@ exports.updateWelcome = async (req, reply) => {
           arDescription: req.raw.body.arDescription,
           enDescription: req.raw.body.enDescription,
           isDriver: req.raw.body.isDriver,
+          type: req.raw.body.type
         },
         { new: true, runValidators: true },
         function (err, model) {
@@ -3043,6 +3139,7 @@ exports.addAdvs = async (req, reply) => {
         is_ads_have_expiry_date: true,
         isApprove: approve,
         isActive: true,
+        type: req.raw.body.type,
       });
       var _return = handleError(Advs.validateSync());
       if (_return.length > 0) {
@@ -3124,6 +3221,7 @@ exports.updateAdvs = async (req, reply) => {
             .endOf("day"),
           ads_for: req.raw.body.ads_for,
           image: img,
+          type: req.raw.body.type,
         },
         { new: true, runValidators: true },
         function (err, model) {
@@ -3169,6 +3267,7 @@ exports.updateAdvs = async (req, reply) => {
             .tz("Asia/Riyadh")
             .endOf("day"),
           ads_for: req.raw.body.ads_for,
+          type: req.raw.body.type,
         },
         { new: true, runValidators: true },
         function (err, model) {
@@ -3222,6 +3321,260 @@ exports.deleteAdvs = async (req, reply) => {
   }
 };
 
+exports.addMain = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    if (req.raw.files) {
+      const files = req.raw.files;
+      let fileArr = [];
+      for (let key in files) {
+        fileArr.push({
+          name: files[key].name,
+          mimetype: files[key].mimetype,
+        });
+      }
+      var data = Buffer.from(files.image.data);
+      fs.writeFile(
+        "./uploads/" + files.image.name,
+        data,
+        "binary",
+        function (err) {
+          if (err) {
+            console.log("There was an error writing the image");
+          } else {
+            console.log("The sheel file was written");
+          }
+        }
+      );
+
+      let img = "";
+      await uploadImages(files.image.name).then((x) => {
+        img = x;
+      });
+
+    let _Category = new Main({
+      arName: req.raw.body.arName,
+      enName: req.raw.body.enName,
+      enDescription: req.raw.body.enDescription,
+      arDescription: req.raw.body.arDescription,  
+      image: img,
+      isDeleted: false,
+      sort: req.raw.body.sort,
+    });
+    var _return = handleError(_Category.validateSync());
+    if (_return.length > 0) {
+      reply.code(200).send({
+        status_code: 400,
+        status: false,
+        message: _return[0],
+        items: _return,
+      });
+      return;
+    }
+    let rs = await _Category.save();
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        rs
+      )
+    );
+    } 
+  }catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.updateMain = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    if (req.raw.files) {
+      const files = req.raw.files;
+      let fileArr = [];
+      for (let key in files) {
+        fileArr.push({
+          name: files[key].name,
+          mimetype: files[key].mimetype,
+        });
+      }
+      var data = Buffer.from(files.image.data);
+      fs.writeFile(
+        "./uploads/" + files.image.name,
+        data,
+        "binary",
+        function (err) {
+          if (err) {
+            console.log("There was an error writing the image");
+          } else {
+            console.log("The sheel file was written");
+          }
+        }
+      );
+
+      let img = "";
+      await uploadImages(files.image.name).then((x) => {
+        img = x;
+      });
+      const _Category = await Main.findByIdAndUpdate(
+        req.params.id,
+        {
+          arName: req.raw.body.arName,
+          enName: req.raw.body.enName,
+          image: img,
+          enDescription: req.raw.body.enDescription,
+          arDescription: req.raw.body.arDescription,
+          sort: req.raw.body.sort,
+        },
+        { new: true, runValidators: true },
+        function (err, model) {
+          var _return = handleError(err);
+          if (_return.length > 0) {
+            reply.code(200).send({
+              status_code: 400,
+              status: false,
+              message: _return[0],
+              items: _return,
+            });
+            return;
+          }
+        }
+      );
+
+      reply
+      .code(200)
+      .send(
+        success(
+          language,
+          200,
+          MESSAGE_STRING_ARABIC.SUCCESS,
+          MESSAGE_STRING_ENGLISH.SUCCESS,
+          {}
+        )
+      );
+   }else{
+    const _Category = await Main.findByIdAndUpdate(
+      req.params.id,
+      {
+        arName: req.raw.body.arName,
+        enName: req.raw.body.enName,
+        enDescription: req.raw.body.enDescription,
+        arDescription: req.raw.body.arDescription,
+        sort: req.raw.body.sort,
+      },
+      { new: true, runValidators: true },
+      function (err, model) {
+        var _return = handleError(err);
+        if (_return.length > 0) {
+          reply.code(200).send({
+            status_code: 400,
+            status: false,
+            message: _return[0],
+            items: _return,
+          });
+          return;
+        }
+      }
+    );
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        {}
+      )
+    );
+   }
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.deleteMain = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    const previousCategory = await Main.findById(req.params.id);
+    const _Category = await Main.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: !previousCategory.isDeleted },
+      { new: true, runValidators: true },
+      function (err, model) {
+        var _return = handleError(err);
+        if (_return.length > 0) {
+          reply.code(200).send({
+            status_code: 400,
+            status: false,
+            message: _return[0],
+            items: _return,
+          });
+          return;
+        }
+      }
+    );
+
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS
+      )
+    );
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getMain = async (req, reply) => {
+  try {
+    var arr = [];
+    const language = req.headers["accept-language"];
+    const _Category = await Main.find({ isDeleted: false }).sort({
+      sort: -1,
+    });
+
+    reply
+      .code(200)
+      .send(
+        success(
+          language,
+          200,
+          MESSAGE_STRING_ARABIC.SUCCESS,
+          MESSAGE_STRING_ENGLISH.SUCCESS,
+          _Category
+        )
+      );
+    return;
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getSingleMain = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    const _Category = await Main.findById(req.params.id).sort({ _id: -1 });
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: _Category,
+    };
+    reply.code(200).send(response);
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+
 exports.addCategory = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {
@@ -3261,6 +3614,7 @@ exports.addCategory = async (req, reply) => {
       image: img,
       isDeleted: false,
       sort: req.raw.body.sort,
+      main_id: req.raw.body.main_id,
     });
     var _return = handleError(_Category.validateSync());
     if (_return.length > 0) {
@@ -3329,6 +3683,7 @@ exports.updateCategory = async (req, reply) => {
           enDescription: req.raw.body.enDescription,
           arDescription: req.raw.body.arDescription,
           sort: req.raw.body.sort,
+          main_id: req.raw.body.main_id,
         },
         { new: true, runValidators: true },
         function (err, model) {
@@ -3365,6 +3720,7 @@ exports.updateCategory = async (req, reply) => {
         enDescription: req.raw.body.enDescription,
         arDescription: req.raw.body.arDescription,
         sort: req.raw.body.sort,
+        main_id: req.raw.body.main_id,
       },
       { new: true, runValidators: true },
       function (err, model) {
@@ -3388,7 +3744,7 @@ exports.updateCategory = async (req, reply) => {
         200,
         MESSAGE_STRING_ARABIC.SUCCESS,
         MESSAGE_STRING_ENGLISH.SUCCESS,
-        Category
+        {}
       )
     );
    }
@@ -3438,7 +3794,8 @@ exports.getCategory = async (req, reply) => {
   try {
     var arr = [];
     const language = req.headers["accept-language"];
-    const _Category = await Category.find({ isDeleted: false }).sort({
+    const _Category = await Category.find({ isDeleted: false }).populate("main_id")
+    .sort({
       sort: -1,
     });
 

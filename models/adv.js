@@ -49,6 +49,9 @@ const Advschema = mongoose.Schema(
     by: {
       type: String,
     },
+    type: {
+      type: String,
+    },
     isApprove: {
       type: Boolean,
     },
