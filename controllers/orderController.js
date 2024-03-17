@@ -194,6 +194,19 @@ exports.addOrder = async (req, reply) => {
             total_tax = (Number(total) * Number(tax.value))
           }
           var address = req.body.address;
+          if(req.body.paymentType == 'wallet' && Number(userObj.wallet) < total){
+            reply
+            .code(200)
+            .send(
+              errorAPI(
+                language,
+                400,
+                MESSAGE_STRING_ARABIC.WALLET,
+                MESSAGE_STRING_ENGLISH.WALLET
+              )
+            );
+            return;
+          }
           if(!req.body.address || req.body.address == ""){
             let rs = new User_Address({
               title: req.body.title,
@@ -213,7 +226,9 @@ exports.addOrder = async (req, reply) => {
             let _rs = await rs.save();
             address = _rs._id;
           }
-          
+          if(req.body.paymentType == 'wallet'){
+            await NewPayment(userId, orderNo , ` سحب رصيد لطلب جديد ${orderNo}` , '-' , total , 'Online');
+          }
           await NewPoint(userId, Number(point.value))
           let Orders = new Order({
             lat: req.body.lat,
