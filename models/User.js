@@ -33,6 +33,9 @@ const UserSchema = mongoose.Schema(
     image: {
       type: String,
     },
+    dob: {
+      type: Date,
+    },
     address: {
       type: String,
     },

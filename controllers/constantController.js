@@ -26,10 +26,11 @@ const {
   times,
   getCurrentDateTime,
   currentDate,
+  section
 } = require("../models/Constant");
 const { Users } = require("../models/User");
 const { employee } = require("../models/Employee");
-const { Place_Delivery, Supplier, Category, SubCategory, Product_Price, Main } = require("../models/Product");
+const { Place_Delivery, Supplier, Category, SubCategory, Product_Price, Main, } = require("../models/Product");
 const { mail_general } = require("../utils/utils");
 
 const { success, errorAPI } = require("../utils/responseApi");
@@ -47,6 +48,199 @@ const { emailRegex, handleError } = require("../utils/utils");
 const { Adv } = require("../models/adv");
 
 exports.getHomeRequest = async (req, reply) => {
+  try {
+    const language = req.headers["accept-language"];
+    const sections = await section.find({isDeleted: false}).sort({ sort: 1 });
+    var home_arr = []
+    for await(var sec of sections){
+      if(sec.type == 'slider'){
+        var arr2 = [];
+        const slider = await Adv.find({type:'slider'}).sort({ _id: -1 });
+        for await(const element of slider){
+          var newObject = element.toObject();
+          var obj = {
+            _id: newObject._id,
+            title: newObject[`${language}Title`],
+            description: newObject[`${language}Description`],
+            image: newObject.image,
+            type: "slider"
+          };
+          arr2.push(obj);
+        }
+        var obj = {
+          type: sec.type,
+          action: "none",
+          data: arr2
+        }
+        home_arr.push(obj);
+      }
+      if(sec.type == 'main_service'){
+        const mains = await Main.find({$and:[{isDeleted: false},{section_id:sec._id}]}).sort({ sort: 1 });
+        var return_arr = []
+        for await (const idx of mains) {
+          var mainObject = idx.toObject();
+          var cats_arr = []
+          const cats = await Category.find({$and:[{isDeleted: false},{main_id: idx._id}]}).sort({ sort: 1 });
+          // for await(const element of cats) {
+          //   var catCategory = element.toObject();
+          //   var subs = []
+          //   var _subs = await SubCategory.find({$and:[{isDeleted: false},{category_id:catCategory._id }]}).sort({ _id: -1 });
+          //   for await(const i of _subs) {
+          //     var _newObject = i.toObject();
+          //     var obj = {
+          //       _id: _newObject._id,
+          //       price: _newObject.price,
+          //       title: _newObject[`${language}Name`],
+          //       description: _newObject[`${language}Description`],
+          //       image: _newObject.image,
+          //       type:"sub_sub_category",
+          //     };
+          //     subs.push(obj)
+          //   }
+          //   var obj = {
+          //     _id: catCategory._id,
+          //     price: catCategory.price,
+          //     title: catCategory[`${language}Name`],
+          //     description: catCategory[`${language}Description`],
+          //     image: catCategory.image,
+          //     type:"sub_category",
+          //     sub:subs
+          //   };
+          //   cats_arr.push(obj)
+          // }
+          var obj = {
+            _id: mainObject._id,
+            title: mainObject[`${language}Name`],
+            description: mainObject[`${language}Description`],
+            image: mainObject.image,
+            type:"main_category",
+            // category: cats_arr
+          };
+          return_arr.push(obj);
+        }
+        var obj = {
+          type: sec.type,
+          action: "main_category",
+          data:return_arr
+        }
+        home_arr.push(obj);
+      }
+      if(sec.type == 'offer'){
+        var arr2 = [];
+        const slider = await Adv.find({type:'offer'}).sort({ _id: -1 });
+        const sect = await section.findOne({arName: 'العروض'}).sort({ _id: -1 });
+        const main = await Main.findOne({section_id: sect._id}).sort({ _id: -1 });
+        for await(const element of slider){
+          var newObject = element.toObject();
+          var obj = {
+            _id: main ? main._id : "",
+            title: newObject[`${language}Title`],
+            description: newObject[`${language}Description`],
+            image: newObject.image,
+            type: "offer"
+          };
+          arr2.push(obj);
+        }
+        var obj = {
+          type:sec.type,
+          action: "none",
+          data:arr2
+        }
+        home_arr.push(obj);
+      }
+      if(sec.type == 'comunity'){
+        const mains = await Main.find({$and:[{isDeleted: false},{section_id:sec._id}]}).sort({ sort: 1 });
+        var return_arr = []
+        for await (const idx of mains) {
+          var mainObject = idx.toObject();
+          var cats_arr = []
+          const cats = await Category.find({$and:[{isDeleted: false},{main_id: idx._id}]}).sort({ sort: 1 });
+          // for await(const element of cats) {
+          //   var catCategory = element.toObject();
+          //   var subs = []
+          //   var _subs = await SubCategory.find({$and:[{isDeleted: false},{category_id:catCategory._id }]}).sort({ _id: -1 });
+          //   for await(const i of _subs) {
+          //     var _newObject = i.toObject();
+          //     var obj = {
+          //       _id: _newObject._id,
+          //       price: _newObject.price,
+          //       title: _newObject[`${language}Name`],
+          //       description: _newObject[`${language}Description`],
+          //       image: _newObject.image,
+          //       type:"sub_sub_category",
+          //     };
+          //     subs.push(obj)
+          //   }
+          //   var obj = {
+          //     _id: catCategory._id,
+          //     price: catCategory.price,
+          //     title: catCategory[`${language}Name`],
+          //     description: catCategory[`${language}Description`],
+          //     image: catCategory.image,
+          //     type:"sub_category",
+          //     sub:subs
+          //   };
+          //   cats_arr.push(obj)
+          // }
+          var obj = {
+            _id: mainObject._id,
+            title: mainObject[`${language}Name`],
+            description: mainObject[`${language}Description`],
+            image: mainObject.image,
+            type:"main_category",
+            // category: cats_arr
+          };
+          return_arr.push(obj);
+        }
+        var obj = {
+          type: sec.type,
+          action: "main_category",
+          data:return_arr
+        }
+        home_arr.push(obj);
+      }
+      if(sec.type == 'whatsapp'){
+        var arr2 = [];
+        const slider = await Adv.find({type:'whatsapp'}).sort({ _id: -1 });
+        for await(const element of slider){
+          var newObject = element.toObject();
+          var obj = {
+            _id: newObject._id,
+            title: newObject[`${language}Title`],
+            description: newObject[`${language}Description`],
+            image: newObject.image,
+            type: "whatsapp"
+          };
+          arr2.push(obj);
+        }
+        var obj = {
+          type:sec.type,
+          action: "none",
+          data:arr2
+        }
+        home_arr.push(obj);
+      }
+    }
+
+    reply
+      .code(200)
+      .send(
+        success(
+          language,
+          200,
+          MESSAGE_STRING_ARABIC.SUCCESS,
+          MESSAGE_STRING_ENGLISH.SUCCESS,
+          home_arr
+        )
+      );
+
+    return;
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getHomeRequestOld = async (req, reply) => {
   try {
     const language = req.headers["accept-language"];
     const mains = await Main.find({isDeleted: false}).sort({ sort: 1 });
@@ -529,6 +723,7 @@ exports.getCountry = async (req, reply) => {
   }
 };
 
+
 exports.getCountryAdmin = async (req, reply) => {
   try {
     var arr = [];
@@ -551,6 +746,30 @@ exports.getCountryAdmin = async (req, reply) => {
     throw boom.boomify(err);
   }
 };
+
+exports.getSectionAdmin = async (req, reply) => {
+  try {
+    var arr = [];
+    const language = req.headers["accept-language"];
+    const _country = await section.find({isDeleted:false}).sort({sort:1});
+
+    reply
+      .code(200)
+      .send(
+        success(
+          language,
+          200,
+          MESSAGE_STRING_ARABIC.SUCCESS,
+          MESSAGE_STRING_ENGLISH.SUCCESS,
+          _country
+        )
+      );
+    return;
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
 
 exports.getCity = async (req, reply) => {
   try {
@@ -831,6 +1050,21 @@ exports.getSingleCity = async (req, reply) => {
 exports.getSingleCountry = async (req, reply) => {
   try {
     const _country = await country.findById(req.params.id).sort({ _id: -1 });
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: _country,
+    };
+    reply.code(200).send(response);
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getSingleSection = async (req, reply) => {
+  try {
+    const _country = await section.findById(req.params.id).sort({ _id: -1 });
     const response = {
       status_code: 200,
       status: true,
@@ -1373,6 +1607,43 @@ exports.addCountry = async (req, reply) => {
   }
 };
 
+exports.addSection = async (req, reply) => {
+  try {
+    const language = req.headers["accept-language"];
+    let _country = new section({
+      arName: req.body.arName,
+      enName: req.body.enName,
+      type: req.body.type,
+      sort: req.body.sort,
+      isDeleted: false,
+    });
+    var _return = handleError(_country.validateSync());
+    if (_return.length > 0) {
+      reply.code(200).send({
+        status_code: 400,
+        status: false,
+        message: _return[0],
+        items: _return,
+      });
+      return;
+    }
+    let rs = await _country.save();
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        rs
+      )
+    );
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
 exports.addCity = async (req, reply) => {
   try {
     const language = req.headers["accept-language"];
@@ -1558,6 +1829,47 @@ exports.updateCountry = async (req, reply) => {
   }
 };
 
+exports.updateSection = async (req, reply) => {
+  try {
+    const language = req.headers["accept-language"];
+    const _country = await section.findByIdAndUpdate(
+      req.params.id,
+      {
+        arName: req.body.arName,
+        enName: req.body.enName,
+        type: req.body.type,
+        sort: req.body.sort,
+      },
+      { new: true, runValidators: true },
+      function (err, model) {
+        var _return = handleError(err);
+        if (_return.length > 0) {
+          reply.code(200).send({
+            status_code: 400,
+            status: false,
+            message: _return[0],
+            items: _return,
+          });
+          return;
+        }
+      }
+    );
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        country
+      )
+    );
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
 exports.updateCity = async (req, reply) => {
   try {
     const language = req.headers["accept-language"];
@@ -1607,6 +1919,41 @@ exports.deleteCountry = async (req, reply) => {
     const _country = await country.findByIdAndUpdate(
       req.params.id,
       { isDeleted: !previousCountry.isDeleted },
+      { new: true, runValidators: true },
+      function (err, model) {
+        var _return = handleError(err);
+        if (_return.length > 0) {
+          reply.code(200).send({
+            status_code: 400,
+            status: false,
+            message: _return[0],
+            items: _return,
+          });
+          return;
+        }
+      }
+    );
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS
+      )
+    );
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.deleteSection = async (req, reply) => {
+  try {
+    const language = req.headers["accept-language"];
+    const _country = await section.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: true },
       { new: true, runValidators: true },
       function (err, model) {
         var _return = handleError(err);
@@ -3360,6 +3707,7 @@ exports.addMain = async (req, reply) => {
       image: img,
       isDeleted: false,
       sort: req.raw.body.sort,
+      section_id: req.raw.body.section_id,  
     });
     var _return = handleError(_Category.validateSync());
     if (_return.length > 0) {
@@ -3428,6 +3776,8 @@ exports.updateMain = async (req, reply) => {
           enDescription: req.raw.body.enDescription,
           arDescription: req.raw.body.arDescription,
           sort: req.raw.body.sort,
+          section_id: req.raw.body.section_id,  
+
         },
         { new: true, runValidators: true },
         function (err, model) {
@@ -3464,6 +3814,7 @@ exports.updateMain = async (req, reply) => {
         enDescription: req.raw.body.enDescription,
         arDescription: req.raw.body.arDescription,
         sort: req.raw.body.sort,
+        section_id: req.raw.body.section_id,  
       },
       { new: true, runValidators: true },
       function (err, model) {

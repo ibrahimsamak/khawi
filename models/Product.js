@@ -50,6 +50,11 @@ const schema = mongoose.Schema({
   sort: {
     type: Number,
   },
+  section_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "sections",
+    required: [true, "section is required"],
+  }, 
 });
 
 const CategorySchema = mongoose.Schema({

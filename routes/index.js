@@ -208,6 +208,36 @@ const admin_routes = [
     beforeHandler: [auth.getAdminToken],
     handler: constantController.updateCountry,
   },
+
+  {
+    method: "GET",
+    url: "/api/constant/section",
+    handler: constantController.getSectionAdmin,
+  },
+  {
+    method: "GET",
+    url: "/api/constant/section/:id",
+    handler: constantController.getSingleSection,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/delete-section/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.deleteSection,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/section",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.addSection,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/section/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.updateSection,
+  },
+
   {
     method: "GET",
     url: "/api/constant/city/:id",
@@ -1257,6 +1287,13 @@ const mobile_routes = [
 
 //mobile driver
 const driver_routes = [
+  {
+    method: "POST",
+    url: "/api/mobile/driver/wallet",
+    beforeHandler: [auth.getToken],
+    handler: employeeController.updateWallet,
+  },
+
   {
     method: "POST",
     url: "/api/mobile/employee/logout/:id",

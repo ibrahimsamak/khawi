@@ -33,6 +33,7 @@ const {
   mail_welcome,
   handleError,
   sendSMS,
+  NewPaymentEmployee,
 } = require("../utils/utils");
 const { Adv } = require("../models/adv");
 const { Notifications } = require("../models/Notifications");
@@ -50,6 +51,37 @@ const {
 } = require("../utils/constants");
 const { Order } = require("../models/Order");
 const { Place_Delivery, Supervisor } = require("../models/Product");
+const { coupon_usage } = require("../models/Coupon");
+
+exports.updateWallet = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    var orderNo = `${makeOrderNumber(6)}`;
+    const _user = await NewPaymentEmployee(req.user._id, orderNo ,"شحن المحفظة الالكترونية", "+", req.body.amount, "Online" );
+    if(req.body.coupon && req.body.coupon != ""){
+      let usage = new coupon_usage({
+        coupon: req.body.coupon,
+        dt_date: getCurrentDateTime(),   
+        amount: Number(req.body.amount),
+        user: req.user._id
+      });
+      await usage.save()
+    }
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        _user
+      )
+    );   
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
 
 // Add a new Users
 exports.loginEmployee = async (req, reply) => {

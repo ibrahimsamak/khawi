@@ -520,7 +520,8 @@ exports.updateProfile = async (req, reply) => {
       !req.raw.body.email ||
       !req.raw.body.full_name ||
       !req.raw.body.lat ||
-      !req.raw.body.lng
+      !req.raw.body.lng ||
+      !req.raw.body.dob 
     ) {
       reply
         .code(200)
@@ -602,6 +603,7 @@ exports.updateProfile = async (req, reply) => {
               lat: req.raw.body.lat,
               lng: req.raw.body.lng,
               address: req.raw.body.address,
+              dob: req.raw.body.dob,
 
               streetName: req.raw.body.streetName,
               floorNo: req.raw.body.floorNo,
@@ -667,7 +669,8 @@ exports.updateProfile = async (req, reply) => {
               streetName: req.raw.body.streetName,
               floorNo: req.raw.body.floorNo,
               buildingNo: req.raw.body.buildingNo,
-              flatNo: req.raw.body.flatNo
+              flatNo: req.raw.body.flatNo,
+              dob: req.raw.body.dob,
             },
             { new: true }
           );

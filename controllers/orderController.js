@@ -83,9 +83,7 @@ exports.addOrder = async (req, reply) => {
         { name: "couponCode" },
         { name: "paymentType" },
         { name: "category_id" },
-        { name: "sub_category_id" },
-        { name: "dt_date" },
-        { name: "dt_time" },
+        { name: "sub_category_id" }
       ];
 
       validationArray.push({ name: "lat" });
@@ -167,8 +165,9 @@ exports.addOrder = async (req, reply) => {
           }
           _supplier = check_category.supplier_id 
           for await(var i of req.body.extra){
-            const _sub_category = await SubCategory.findById(i);
-            total += Number(_sub_category.price)
+            const _sub_category = await SubCategory.findById(i.sub_sub_id);
+            var _total_price = Number(_sub_category.price) * Number(i.qty)
+            total += _total_price
           }
           if(req.body.couponCode && req.body.couponCode != ""){
             let obj =  await check_coupon(req.user._id, req.body.couponCode, req.body.sub_category_id)
@@ -242,8 +241,8 @@ exports.addOrder = async (req, reply) => {
             netTotal: total,
             status: ORDER_STATUS.new,
             createAt: getCurrentDateTime(),
-            dt_date: req.body.dt_date,
-            dt_time: req.body.dt_time,
+            // dt_date: req.body.dt_date,
+            // dt_time: req.body.dt_time,
             sub_category_id: req.body.sub_category_id,
             category_id: req.body.category_id,
             addressType: req.body.addressType,
@@ -272,7 +271,7 @@ exports.addOrder = async (req, reply) => {
               200,
               MESSAGE_STRING_ARABIC.SUCCESS,
               MESSAGE_STRING_ENGLISH.SUCCESS,
-              {_id: rs._id}
+               { _id: rs._id }
             )
           );
         return;
@@ -609,14 +608,19 @@ exports.updateOrder = async (req, reply) => {
         var code = "1234"; // makeid(6)
         msg = msg_updated + " كود العملية هو: " + code;
         
-        var subs = await SubCategory.find({_id:{$in: req.body.extra}})
+        // var subs = await SubCategory.find({_id:{$in: req.body.extra}})
         var price = 0;
-        subs.forEach(element => { price += element.price });
+        // subs.forEach(element => { price += element.price });
+        
+        for await(var i of req.body.extra){
+          const _sub_category = await SubCategory.findById(i.sub_sub_id);
+          var _total_price = Number(_sub_category.price) * Number(i.qty)
+          price += _total_price
+        }
         var new_total = (Number(price) * Number(tax.value)) + Number(price)
         var new_tax = (Number(price) * Number(tax.value)) 
 
-        await Order.findByIdAndUpdate( req.params.id, { update_code: code , extra: req.body.extra , tax: Number(new_tax)+Number(check.tax), new_total: new_total, new_tax: new_tax, total: Number(/* The above code is declaring a variable called "new_total" in JavaScript. However, the code is incomplete and does not provide any further information about what the variable is intended to be used for or how it is being assigned a value. */
-        new_total)+Number(check.total), netTotal: Number(new_total)+Number(check.total)},{ new: true })       
+        await Order.findByIdAndUpdate( req.params.id, { update_code: code , extra: req.body.extra , tax: Number(new_tax)+Number(check.tax), new_total: new_total, new_tax: new_tax, total: Number(new_total)+Number(check.total), netTotal: Number(new_total)+Number(check.total)},{ new: true })       
         await sendSMS(check.user.phone_number, "", "", msg)
         await CreateGeneralNotification(check.user.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.employee, check.user._id, "", "");
       }
@@ -781,7 +785,7 @@ exports.getUserOrder = async (req, reply) => {
     const total = await Order.find(query).countDocuments();
     const item = await Order.find(query)
     .populate("user", "-token")
-    .populate({ path: "extra", populate: { path: "subcategory" } })
+    .populate({ path: "extra", populate: { path: "sub_sub_id" } })
     .populate("employee", "-token")
     .populate("supervisor", "-token")
     .populate("provider")
@@ -813,12 +817,15 @@ exports.getUserOrder = async (req, reply) => {
         image: element.category_id.image
       }
       element.extra.forEach(_element => {
-        var _obj = {
-          _id: _element._id,
-          title: _element[`${language}Name`],
-          price: _element.price
+        if(_element.sub_sub_id){
+          var _obj = {
+            _id: _element.sub_sub_id._id,
+            title: _element.sub_sub_id[`${language}Name`],
+            price: _element.sub_sub_id.price,
+            qty: _element.qty
+          }
+          arr.push(_obj)
         }
-        arr.push(_obj)
       });
       obj.extra = arr;
       items.push(obj);
@@ -853,8 +860,9 @@ exports.getOrderTotal = async (req, reply) => {
     // const sub_category = await SubCategory.findById(req.body.sub_category_id);
     // var total = Number(sub_category.price);
     for await(var i of req.body.extra){
-      const _sub_category = await SubCategory.findById(i);
-      total += Number(_sub_category.price)
+      const _sub_category = await SubCategory.findById(i.sub_sub_id);
+      var total_price = Number(_sub_category.price) * Number(i.qty)
+      total += total_price
     }
 
     var discount_rate = Number(total) * Number(sp ? sp.discount_rate : 0);
@@ -897,7 +905,7 @@ exports.getOrderDetails = async (req, reply) => {
       
     var item = await Order.findById(req.params.id)
     .populate("user", "-token")
-    .populate({ path: "extra", populate: { path: "subcategory" } })
+    .populate({ path: "extra", populate: { path: "sub_sub_id" } })
     .populate("employee", "-token")
     .populate("provider")
     .populate("sub_category_id")
@@ -929,12 +937,15 @@ exports.getOrderDetails = async (req, reply) => {
       title: obj.category_id[`${language}Name`],
     }
     obj.extra.forEach(element => {
-      var _obj = {
-        _id: element._id,
-        title: element[`${language}Name`],
-        price: element.price
+      if(element.sub_sub_id) {
+        var _obj = {
+          _id: element.sub_sub_id._id,
+          title: element.sub_sub_id[`${language}Name`],
+          price: element.sub_sub_id.price,
+          qty: element.qty
+        }
+        arr.push(_obj)
       }
-      arr.push(_obj)
     });
     obj.sub_category_id = subCategoryObj
     obj.category_id = categoryObj
@@ -1090,7 +1101,6 @@ exports.getTransaction = async (req, reply) => {
     const total = await Transactions.find({ user: userId }).countDocuments();
     const item = await Transactions.find({ user: userId })
     .sort({ _id: -1 })
-    .populate("user", "-token")
     .skip(page * limit)
     .limit(limit);
 
@@ -1670,7 +1680,7 @@ exports.getOrdersSeacrhExcel = async (req, reply) => {
     const item = await Order.find(query)
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("supervisor", "-token")
       .populate("provider")
@@ -1744,7 +1754,7 @@ exports.getOrdersSeacrh = async (req, reply) => {
     const item = await Order.find(query)
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("supervisor", "-token")
       .populate("provider")
@@ -1798,7 +1808,7 @@ exports.getEmployeeOrder = async (req, reply) => {
     const item = await Order.find(query)
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("supervisor", "-token")
       .populate("provider")
@@ -1831,12 +1841,15 @@ exports.getEmployeeOrder = async (req, reply) => {
         image: element.category_id.image
       }
       element.extra.forEach(_element => {
-        var _obj = {
-          _id: _element._id,
-          title: _element[`${language}Name`],
-          price: _element.price
+        if(_element.sub_sub_id){
+          var _obj = {
+            _id: _element.sub_sub_id._id,
+            title: _element.sub_sub_id[`${language}Name`],
+            price: _element.sub_sub_id.price,
+            qty: _element.qty
+          }
+          arr.push(_obj)
         }
-        arr.push(_obj)
       });
       obj.extra = arr;
       items.push(obj);
@@ -2188,7 +2201,7 @@ exports.getOrdersSearchFilter = async (req, reply) => {
     const item = await Order.find(query1)
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("provider")
       .populate("sub_category_id")
@@ -2364,7 +2377,7 @@ exports.getUserOrders = async (req, reply) => {
     const item = await Order.find({ user: userId })
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("provider")
       .populate("supervisor")
@@ -2407,7 +2420,7 @@ exports.getProivdeOrders = async (req, reply) => {
     const item = await Order.find({ provider: userId })
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("provider")
       .populate("supervisor")
@@ -2450,7 +2463,7 @@ exports.getSupervisorOrders = async (req, reply) => {
     const item = await Order.find({ supervisor: userId })
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("provider")
       .populate("supervisor")
@@ -2495,7 +2508,7 @@ exports.getEmployeesOrder = async (req, reply) => {
     const total = await Order.find({ employee: userId }).countDocuments();
     const item = await Order.find({ employee: userId })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("provider")
       .populate("supervisor")
@@ -2573,7 +2586,7 @@ exports.getOrders = async (req, reply) => {
     const item = await Order.find(query)
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("supervisor", "-token")
       .populate("provider")
@@ -2645,7 +2658,7 @@ exports.getOrdersExcel = async (req, reply) => {
     const item = await Order.find(query)
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("supervisor", "-token")
       .populate("provider")
@@ -2979,7 +2992,7 @@ exports.getOrdersMap = async (req, reply) => {
     const item = await Order.find(query)
       .sort({ _id: -1 })
       .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
       .populate("supervisor", "-token")
       .populate("provider")

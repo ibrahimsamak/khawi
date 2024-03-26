@@ -75,6 +75,10 @@ const employeeSchema = mongoose.Schema(
       type: Number,
       default: 0
     },
+    wallet:{
+      type: Number,
+      default: 0
+    },
     supervisor_id: { type: mongoose.Schema.Types.ObjectId, ref: "supervisor", required: [true, "supervisor is required"], },
     supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: "supplier"}
   },

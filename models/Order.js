@@ -21,7 +21,12 @@ const Orderschema = mongoose.Schema(
     paymentType: { type: String },
     category_id: { type: mongoose.Schema.Types.ObjectId, ref: "category"},
     sub_category_id: { type: mongoose.Schema.Types.ObjectId, ref: "subcategory"} ,
-    extra:{type:[ {type: mongoose.Schema.Types.ObjectId, ref: "subcategory"} ]},
+    extra:{type:[ 
+      {
+        sub_sub_id: {type: mongoose.Schema.Types.ObjectId, ref: "subcategory"}, 
+        qty: Number
+      }
+    ]},
     user: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
     supervisor: { type: mongoose.Schema.Types.ObjectId, ref: "supervisor" },
     provider: { type: mongoose.Schema.Types.ObjectId, ref: "supplier" },
@@ -68,7 +73,7 @@ const PaymentSchema = mongoose.Schema(
 const PaymentTransactionsSchema = mongoose.Schema(
   {
     order_no: { type: String },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
+    user: { type: String },
     type: { type: String },
     total: { type: Number },
     createAt: { type: Date },

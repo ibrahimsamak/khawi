@@ -40,6 +40,30 @@ const countrySchema = mongoose.Schema(
   { versionKey: false }
 );
 
+const sectionSchema = mongoose.Schema(
+  {
+    arName: {
+      type: String,
+      required: [true, "arabic name is required"],
+    },
+    enName: {
+      type: String,
+      required: [true, "english name is required"],
+    },
+    type: {
+      type: String,
+      required: [true, "type is required"],
+    },
+    sort: {
+      type: Number,
+    },
+    isDeleted: {
+      type: Boolean,
+    },
+  },
+  { versionKey: false }
+);
+
 const generalSchema = mongoose.Schema(
   {
     arName: {
@@ -336,6 +360,7 @@ const walletsetting = mongoose.model("walletsettings", walletsettings);
 const type = mongoose.model("type", generalSchema);
 const language = mongoose.model("language", generalSchema);
 const times = mongoose.model("times", TimesSchema);
+const section = mongoose.model("sections", sectionSchema);
 
 function getCurrentDateTime() {
   // var utc = new Date();
@@ -369,3 +394,4 @@ exports.country = country;
 exports.type = type;
 exports.languages = language;
 exports.times = times;
+exports.section = section;

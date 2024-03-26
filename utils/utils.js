@@ -19,6 +19,7 @@ const { Transactions, Order } = require("../models/Order");
 const utils = require("../utils/utils");
 const { coupon } = require("../models/Coupon");
 const { SubCategory } = require("../models/Product");
+const { employee } = require("../models/Employee");
 
 cloudinary.config({
   cloud_name: "dfrogfdqd",
@@ -528,6 +529,32 @@ exports.NewPayment = async function (user_id, order_no ,to, sign, amount, paymen
   );
   return _user;
 };
+
+exports.NewPaymentEmployee = async function (user_id, order_no ,to, sign, amount, paymentType) {
+  // var orderNo = `#${utils.makeid(6)}`;
+  let _payment = new Transactions({
+    order_no: order_no,
+    user: user_id,
+    details: to,
+    total: amount,
+    type: sign,
+    paymentType: paymentType,
+    createAt: getCurrentDateTime(),
+  });
+
+  await _payment.save();
+
+  var _amount = 0;
+  if (sign == "-") _amount = Number(-1 * amount);
+  else _amount = amount;
+  const _user = await employee.findByIdAndUpdate(
+    user_id,
+    { $inc: { wallet: _amount } },
+    { new: true }
+  );
+  return _user;
+};
+
 
 exports.NewPoint = async function (user_id, amount) {
   const _user = await Users.findByIdAndUpdate(
