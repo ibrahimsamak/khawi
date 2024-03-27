@@ -148,6 +148,7 @@ exports.UsersproviderPerYear = async (req, reply) => {
     var items = [];
     var items2 = [];
     const result = await Users.find().sort({ createAt: 1 });
+    const result2 = await employee.find().sort({ createAt: 1 });
     result.forEach((element) => {
       var month_number = new Date(element.createAt).getMonth();
       var month_year = new Date(element.createAt).getFullYear();
@@ -158,6 +159,16 @@ exports.UsersproviderPerYear = async (req, reply) => {
       }
     });
 
+    result2.forEach((element) => {
+      var month_number = new Date(element.createAt).getMonth();
+      var month_year = new Date(element.createAt).getFullYear();
+      let current_year = new Date().getFullYear()
+      var month_name = monthNames[month_number];
+      if(month_year == current_year){
+        items2.push({ month: month_name, user: element._id });
+      }
+    });
+
     var _result = lodash(items)
       .groupBy("month")
       .map(function (items, _name) {
@@ -165,13 +176,20 @@ exports.UsersproviderPerYear = async (req, reply) => {
       })
       .value();
 
+      var _result2 = lodash(items2)
+      .groupBy("month")
+      .map(function (items, _name) {
+        return { name: _name, value: items.length };
+      })
+      .value();
+
     var orderedResult = lodash.orderBy(_result, ["count"], ["desc"]);
-    // var orderedResult2 = lodash.orderBy(_result2, ["count"], ["desc"]);
+    var orderedResult2 = lodash.orderBy(_result2, ["count"], ["desc"]);
 
     const response = {
       items: [
         { name: "مستخدم جديد", series: orderedResult },
-        // { name: "مصممين ومنفذين ومتاجر", series: orderedResult2 },
+        { name: "فني جديد", series: orderedResult2 },
       ],
     };
     reply.send(response);

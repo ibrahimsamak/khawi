@@ -19,6 +19,30 @@ const fastify = require("fastify")({
 // const documentation = require('./documentation/carApi')
 const admin_routes = [
   {
+    method: "GET",
+    url: "/api/employee/orders/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.getEmployeesOrder,
+  },
+  {
+    method: "GET",
+    url: "/api/employee/orders-excel/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.getEmployeesOrderExcel,
+  },
+  {
+    method: "GET",
+    url: "/api/driver/wallet/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.getAdminTransaction,
+  },
+  {
+    method: "GET",
+    url: "/api/users/wallet/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.getAdminTransaction,
+  },
+  {
     method: "POST",
     url: "/api/sms",
     handler: userController.AddSMS,
@@ -491,12 +515,24 @@ const admin_routes = [
     beforeHandler: [auth.getAdminToken],
     handler: orderController.getUserOrders,
   },
+  {
+    method: "GET",
+    url: "/api/users/orders-excel/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.getUserOrdersExcel,
+  },
   //employee
   {
     method: "GET",
     url: "/api/stores/employee/:id",
     beforeHandler: [auth.getAdminToken],
     handler: employeeController.getStoresEmployees,
+  },
+  {
+    method: "GET",
+    url: "/api/users/all-employee",
+    beforeHandler: [auth.getAdminToken],
+    handler: employeeController.getAllEmployees,
   },
   {
     method: "POST",
@@ -541,12 +577,12 @@ const admin_routes = [
     beforeHandler: [auth.getAdminToken],
     handler: employeeController.addEmployee,
   },
-  {
-    method: "GET",
-    url: "/api/employee/orders/:id",
-    beforeHandler: [auth.getAdminToken],
-    handler: orderController.getEmployeesOrder,
-  },
+  // {
+  //   method: "GET",
+  //   url: "/api/employee/orders/:id",
+  //   beforeHandler: [auth.getAdminToken],
+  //   handler: orderController.getEmployeesOrder,
+  // },
   {
     method: "GET",
     url: "/api/supervisor/orders/:id",
@@ -819,6 +855,12 @@ const admin_routes = [
     url: "/api/admin/orders",
     beforeHandler: [auth.getAdminToken],
     handler: orderController.getOrders,
+  },
+  {
+    method: "POST",
+    url: "/api/admin/orders-percentage",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.getOrdersPercentage,
   },
   {
     method: "POST",
@@ -1315,7 +1357,7 @@ const driver_routes = [
     method: "POST",
     url: "/api/driver/order",
     beforeHandler: [auth.getToken],
-    handler: orderController.getEmployeeOrder,
+    handler: orderController.getAllEmployeesOrder,
   },
   {
     method: "GET",

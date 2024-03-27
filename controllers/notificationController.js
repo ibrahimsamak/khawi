@@ -147,7 +147,7 @@ exports.getAdminNotification = async (req, reply) => {
       req.body.dt_to != ""
     ) {
       query = {
-        dt_date: {
+        createAt: {
           $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)),
           $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)),
         },
@@ -243,7 +243,7 @@ exports.addMassNotification = async (req, reply) => {
 
     if (String(req.body.type) == "2") {
       arr = [];
-      const object = await Supplier.find({
+      const object = await employee.find({
         $and: [{ isBlock: false }, { isDeleted: false }],
       });
       for await (const doc of object) {
@@ -261,10 +261,16 @@ exports.addMassNotification = async (req, reply) => {
         });
         _Notification.save();
       }
+      object.forEach((x) => {
+        arr.push(x.fcmToken);
+      });
+
+      CreateNotificationMultiple(arr, req.body.title, req.body.msg, "");
     }
 
     if (String(req.body.type) == "3") {
       arr = [];
+      const object1 = await Users.find({$and: [{ isBlock: false }]}).sort({createAt:-1});
       const object = await employee.find({
         $and: [
           { isBlock: false },
@@ -290,6 +296,25 @@ exports.addMassNotification = async (req, reply) => {
         arr.push(x.fcmToken);
       });
 
+      for await (const doc of object1) {
+        let _Notification = new Notifications({
+          fromId: USER_TYPE.PANEL,
+          user_id: doc._id,
+          title: req.body.title,
+          msg: req.body.msg,
+          dt_date: getCurrentDateTime(),
+          type: 3,
+          body_parms: "",
+          isRead: false,
+          fromName: USER_TYPE.PANEL,
+          toName: doc.full_name,
+        });
+        _Notification.save();
+      }
+      object1.forEach((x) => {
+        arr.push(x.fcmToken);
+      });
+
       CreateNotificationMultiple(arr, req.body.title, req.body.msg, "");
     }
 
@@ -308,7 +333,6 @@ exports.addMassNotification = async (req, reply) => {
     throw boom.boomify(err);
   }
 };
-
 exports.addSingleNotification = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {

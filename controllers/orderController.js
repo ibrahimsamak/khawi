@@ -1672,14 +1672,14 @@ exports.getOrdersSeacrhExcel = async (req, reply) => {
       end_date = new Date(end_date);
       end_date = end_date.setHours(23, 59, 59, 999);
       end_date = new Date(end_date);
-      query = { dt_date: { $lt: end_date } };
+      query = { createAt: { $lt: end_date } };
     }
     if (start_date != "" && start_date != undefined && start_date) {
       start_date = new Date(start_date);
       start_date = start_date.setHours(0, 0, 0, 0);
       start_date = new Date(start_date);
       query = {
-        dt_date: { $gte: start_date },
+        createAt: { $gte: start_date },
       };
     }
     if (
@@ -1691,7 +1691,7 @@ exports.getOrdersSeacrhExcel = async (req, reply) => {
       end_date
     ) {
       query = {
-        dt_date: { $gte: start_date, $lt: end_date },
+        createAt: { $gte: start_date, $lt: end_date },
       };
     }
     if (req.body.supplier_id && req.body.supplier_id != "") {
@@ -1752,7 +1752,7 @@ exports.getOrdersSeacrh = async (req, reply) => {
       start_date = start_date.setHours(0, 0, 0, 0);
       start_date = new Date(start_date);
       query = {
-        dt_date: { $gte: start_date },
+        createAt: { $gte: start_date },
       };
     }
     if (
@@ -1764,7 +1764,7 @@ exports.getOrdersSeacrh = async (req, reply) => {
       end_date
     ) {
       query = {
-        dt_date: { $gte: start_date, $lt: end_date },
+        createAt: { $gte: start_date, $lt: end_date },
       };
     }
     if (req.body.supplier_id && req.body.supplier_id != "") {
@@ -1811,92 +1811,45 @@ exports.getOrdersSeacrh = async (req, reply) => {
     throw boom.boomify();
   }
 };
-
-exports.getEmployeeOrder = async (req, reply) => {
+exports.getEmployeesOrder = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {
-    let userId = req.user._id;
+    let userId = req.params.id;
+    var result = [];
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
-
-    var query = {$and:[{employee: userId}]};
-    if (req.body.status && req.body.status != "") {
-      if(req.body.status == ORDER_STATUS.finished) {
-        query.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
+    var q = {$and:[{employee: userId}]}
+    if(req.query.status && req.query.status != ""){
+      if(req.query.status == ORDER_STATUS.finished){
+        q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
       }
-      else if(req.body.status == 'canceled' ){
-        query.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
+      else if(req.query.status == 'canceled' ){
+        q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
       }
-      else if(req.body.status == ORDER_STATUS.new ){
-        query = {};
-        query["status"] = ORDER_STATUS.new;
-      }
-      else {
-        query.$and.push({status: req.body.status})
+      else{
+        q.$and.push({status:req.query.status})
       }
     }
-    if (req.body.order_no && req.body.order_no != "")
-      query["order_no"] = req.body.order_no;
-
-      console.log(query)
-    const total = await Order.find(query).countDocuments();
-    const item = await Order.find(query)
-      .sort({ _id: -1 })
+    const total = await Order.find(q).countDocuments();
+    const item = await Order.find(q)
       .populate("user", "-token")
       .populate({ path: "extra", populate: { path: "sub_sub_id" } })
       .populate("employee", "-token")
-      .populate("supervisor", "-token")
       .populate("provider")
+      .populate("supervisor")
       .populate("sub_category_id")
       .populate("category_id")
       .populate("address")
+      .sort({ _id: -1 })
       .skip(page * limit)
-      .limit(limit)
-      .select("-couponCode");
-
-
-      var items = []
-    item.forEach(element => {
-      var arr = []
-      var obj = element.toObject();
-      delete obj.sub_category_id;
-      delete obj.category_id;
-      delete obj.extra;
-      obj.sub_category_id = {
-        _id: element.sub_category_id._id,
-        title: element.sub_category_id[`${language}Name`],
-        description: element.sub_category_id[`${language}Description`],
-        price: element.sub_category_id.price,
-        image: element.sub_category_id.image
-      }
-      obj.category_id = {
-        _id: element.category_id._id,
-        title: element.category_id[`${language}Name`],
-        description: element.category_id[`${language}Description`],
-        image: element.category_id.image
-      }
-      element.extra.forEach(_element => {
-        if(_element.sub_sub_id){
-          var _obj = {
-            _id: _element.sub_sub_id._id,
-            title: _element.sub_sub_id[`${language}Name`],
-            price: _element.sub_sub_id.price,
-            qty: _element.qty
-          }
-          arr.push(_obj)
-        }
-      });
-      obj.extra = arr;
-      items.push(obj);
-    });
-
+      .limit(limit);
     reply.code(200).send(
       success(
         language,
         200,
         MESSAGE_STRING_ARABIC.SUCCESS,
         MESSAGE_STRING_ENGLISH.SUCCESS,
-        items,
+        item,
         {
           size: item.length,
           totalElements: total,
@@ -1911,6 +1864,107 @@ exports.getEmployeeOrder = async (req, reply) => {
     return;
   }
 };
+
+exports.getAllEmployeesOrder = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    let userId = req.user._id;
+    var result = [];
+    var page = parseFloat(req.query.page, 10);
+    var limit = parseFloat(req.query.limit, 10);
+    var q = {$and:[{employee: userId}]}
+    if(req.query.status && req.query.status != ""){
+      if(req.query.status == ORDER_STATUS.finished){
+        q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
+      }
+      else if(req.query.status == 'canceled' ){
+        q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
+      }
+      else{
+        q.$and.push({status:req.query.status})
+      }
+    }
+    const total = await Order.find(q).countDocuments();
+    const item = await Order.find(q)
+      .populate("user", "-token")
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
+      .populate("employee", "-token")
+      .populate("provider")
+      .populate("supervisor")
+      .populate("sub_category_id")
+      .populate("category_id")
+      .populate("address")
+      .sort({ _id: -1 })
+      .skip(page * limit)
+      .limit(limit);
+    reply.code(200).send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        item,
+        {
+          size: item.length,
+          totalElements: total,
+          totalPages: Math.floor(total / limit),
+          pageNumber: page,
+        }
+      )
+    );
+    return;
+  } catch (err) {
+    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+    return;
+  }
+};
+
+
+exports.getEmployeesOrderExcel = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    let userId = req.params.id;
+    var result = [];
+    var q = {$and:[{employee: userId}]}
+    if(req.query.status && req.query.status != ""){
+      if(req.query.status == ORDER_STATUS.finished){
+        q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
+      }
+      else if(req.query.status == 'canceled' ){
+        q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
+      }
+      else{
+        q.$and.push({status:req.query.status})
+      }
+    }
+    const total = await Order.find(q).countDocuments();
+    const item = await Order.find(q)
+      .populate("user", "-token")
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
+      .populate("employee", "-token")
+      .populate("provider")
+      .populate("supervisor")
+      .populate("sub_category_id")
+      .populate("category_id")
+      .populate("address")
+      .sort({ _id: -1 })
+
+    reply.code(200).send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        item
+      )
+    );
+    return;
+  } catch (err) {
+    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+    return;
+  }
+};
+
 
 exports.getEmployeeCountOrder = async (req, reply) => {
   const language = req.headers["accept-language"];
@@ -2408,8 +2462,21 @@ exports.getUserOrders = async (req, reply) => {
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
 
-    const total = await Order.find({ user: userId }).countDocuments();
-    const item = await Order.find({ user: userId })
+    var q = {$and:[{user: userId}]}
+    if(req.query.status && req.query.status != ""){
+      if(req.query.status == ORDER_STATUS.finished){
+        q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
+      }
+      else if(req.query.status == 'canceled' ){
+        q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
+      }
+      else{
+        q.$and.push({status:req.query.status})
+      }
+    }
+
+    const total = await Order.find(q).countDocuments();
+    const item = await Order.find(q)
       .sort({ _id: -1 })
       .populate("user", "-token")
       .populate({ path: "extra", populate: { path: "sub_sub_id" } })
@@ -2435,6 +2502,52 @@ exports.getUserOrders = async (req, reply) => {
           totalPages: Math.floor(total / limit),
           pageNumber: page,
         }
+      )
+    );
+    return;
+  } catch (err) {
+    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+    return;
+  }
+};
+
+exports.getUserOrdersExcel = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    let userId = req.params.id;
+    var q = {$and:[{user: userId}]}
+    if(req.query.status && req.query.status != ""){
+      if(req.query.status == ORDER_STATUS.finished){
+        q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
+      }
+      else if(req.query.status == 'canceled' ){
+        q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
+      }
+      else{
+        q.$and.push({status:req.query.status})
+      }
+    }
+
+    const item = await Order.find(q)
+      .sort({ _id: -1 })
+      .populate("user", "-token")
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
+      .populate("employee", "-token")
+      .populate("provider")
+      .populate("supervisor")
+      .populate("sub_category_id")
+      .populate("category_id")
+      .populate("address")
+      .populate("place")
+      .sort({ _id: -1 })
+    
+    reply.code(200).send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        item
       )
     );
     return;
@@ -2651,76 +2764,12 @@ exports.getOrders = async (req, reply) => {
   }
 };
 
-exports.getOrdersExcel = async (req, reply) => {
-  const language = req.headers["accept-language"];
-  try {
-    var query = {};
-    if (
-      req.body.dt_from &&
-      req.body.dt_from != "" &&
-      req.body.dt_to &&
-      req.body.dt_to != ""
-    ) {
-      query = {
-        createAt: {
-          $gte: moment(req.body.dt_from).tz("Asia/Riyadh").startOf("day"),
-          $lt: moment(req.body.dt_to).tz("Asia/Riyadh").endOf("day"),
-        },
-      };
-    }
-
-    if (req.body.status && req.body.status != ""){
-      if(req.body.status == ORDER_STATUS.finished){
-        query["status"] = {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}
-      }
-      else if(req.body.status == 'canceled' ){
-        query["status"] = {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}
-      }
-      else{
-        query["status"] = req.body.status;
-      }
-    }
-    if (req.body.order_no && req.body.order_no != "")
-      query["order_no"] = req.body.order_no;
-
-    if (req.body.supplier_id && req.body.supplier_id != "")
-      query["provider"] = req.body.supplier_id;
-
-    if (req.body.place_id && req.body.supplier_id != "")
-      query["place"] = req.body.place_id;
-
-
-    const item = await Order.find(query)
-      .sort({ _id: -1 })
-      .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
-      .populate("employee", "-token")
-      .populate("supervisor", "-token")
-      .populate("provider")
-      .populate("sub_category_id")
-      .populate("category_id")
-      .populate("address")
-      .select();
-
-    const response = {
-      status: true,
-      code: 200,
-      message: "تمت العملية بنجاح",
-      items: item,
-    };
-    reply.code(200).send(response);
-  } catch (err) {
-    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
-    return;
-  }
-};
-
-
 exports.getOrdersEarnings = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {
     var _result  = []
     var query = {};
+    query["status"] = {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated]}
     if (
       req.body.dt_from &&
       req.body.dt_from != "" &&
@@ -2733,18 +2782,6 @@ exports.getOrdersEarnings = async (req, reply) => {
           $lt: moment(req.body.dt_to).tz("Asia/Riyadh").endOf("day"),
         },
       };
-    }
-
-    if (req.body.status && req.body.status != ""){
-      if(req.body.status == ORDER_STATUS.finished){
-        query["status"] = {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}
-      }
-      else if(req.body.status == 'canceled' ){
-        query["status"] = {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}
-      }
-      else{
-        query["status"] = req.body.status;
-      }
     }
 
     if (req.body.order_no && req.body.order_no != "")
@@ -2773,8 +2810,9 @@ exports.getOrdersEarnings = async (req, reply) => {
         _result = lodash(item)
         .groupBy('employee')
         .map(function (platform, id) {
-          if (platform.length > 0) {
-            if(platform[0].employee){
+          if (platform && platform.length > 0) {
+            if(platform[0] && platform[0].employee){
+              console.log(platform[0].employee)
               return {
                 id: platform[0].employee._id,
                 title: platform[0].employee ? platform[0].employee.full_name : "",
@@ -2810,11 +2848,17 @@ exports.getOrdersEarnings = async (req, reply) => {
     //   .value()
     //   console.log(_result)
     // }
+    var arr = []
+    _result.forEach(element => {
+      if(element){
+        arr.push(element)
+      }
+    });
     const response = {
       status: true,
       code: 200,
       message: "تمت العملية بنجاح",
-      items: _result
+      items: arr
     };
     reply.code(200).send(response);
   } catch (err) {
@@ -3018,7 +3062,7 @@ exports.getOrdersMap = async (req, reply) => {
       .tz("Asia/Riyadh");
 
       var query = {}
-      query["dt_date"]= { $gte: searchDate } 
+      query["createAt"]= { $gte: searchDate } 
       query["status"] = req.query.status_id;
       
       
@@ -3047,5 +3091,176 @@ exports.getOrdersMap = async (req, reply) => {
     reply.send(response);
   } catch(err) {
     throw boom.boomify(err);
+  }
+};
+
+exports.getAdminTransaction = async (req, reply) => {
+  try {
+    const userId = req.params.id;
+    var page = parseFloat(req.query.page, 10);
+    var limit = parseFloat(req.query.limit, 10);
+    
+    const total = await Transactions.find({ user: userId }).countDocuments();
+    const item = await Transactions.find({ user: userId })
+    .sort({ _id: -1 })
+    .populate("user", "-token")
+    .skip(page * limit)
+    .limit(limit);
+
+    // let trans = new Transactions({
+    //     order_no: "2030394",
+    //     user: "5f590217ff72110024dd1686",
+    //     total: 300,
+    //     createAt: getCurrentDateTime(),
+    //     paymentType: "Online",
+    //     details: "شحن المحفظة",
+    //   });
+    //   await trans.save();
+
+
+    const response = {
+      items: item,
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      messageAr: "تمت العملية بنجاح",
+      messageEn: "Done Successfully",
+      pagenation: {
+        size: item.length,
+        totalElements: total,
+        totalPages: Math.floor(total / limit),
+        pageNumber: page,
+      },
+    };
+    reply.send(response);
+  } catch {
+    throw boom.boomify();
+  }
+};
+
+
+exports.getOrdersExcel = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    var query = {};
+    query["status"] = {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}
+    if (
+      req.body.dt_from &&
+      req.body.dt_from != "" &&
+      req.body.dt_to &&
+      req.body.dt_to != ""
+    ) {
+      query = {
+        createAt: {
+          $gte: moment(req.body.dt_from).tz("Asia/Riyadh").startOf("day"),
+          $lt: moment(req.body.dt_to).tz("Asia/Riyadh").endOf("day"),
+        },
+      };
+    }
+    if (req.body.status && req.body.status != ""){
+      if(req.body.status == ORDER_STATUS.finished){
+      }
+      else if(req.body.status == 'canceled' ){
+        query["status"] = {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}
+      }
+      else{
+        query["status"] = req.body.status;
+      }
+    }
+    if (req.body.order_no && req.body.order_no != "")
+      query["order_no"] = req.body.order_no;
+
+    if (req.body.supplier_id && req.body.supplier_id != "")
+      query["provider"] = req.body.supplier_id;
+
+    if (req.body.place_id && req.body.supplier_id != "")
+      query["place"] = req.body.place_id;
+
+
+    const item = await Order.find(query)
+      .sort({ _id: -1 })
+      .populate("user", "-token")
+      .populate({ path: "extra", populate: { path: "sub_sub_id" } })
+      .populate("employee", "-token")
+      .populate("supervisor", "-token")
+      .populate("provider")
+      .populate("sub_category_id")
+      .populate("category_id")
+      .populate("address")
+      .populate("place")
+      .select();
+
+    const response = {
+      status: true,
+      code: 200,
+      message: "تمت العملية بنجاح",
+      items: item,
+    };
+    reply.code(200).send(response);
+  } catch (err) {
+    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+    return;
+  }
+};
+
+exports.getOrdersPercentage = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    var _result  = []
+    var query = {};
+    query["status"] = {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated]}
+    if (
+      req.body.dt_from &&
+      req.body.dt_from != "" &&
+      req.body.dt_to &&
+      req.body.dt_to != ""
+    ) {
+      query = {
+        createAt: {
+          $gte: moment(req.body.dt_from).tz("Asia/Riyadh").startOf("day"),
+          $lt: moment(req.body.dt_to).tz("Asia/Riyadh").endOf("day"),
+        },
+      };
+    }
+
+    if (req.body.supplier_id && req.body.supplier_id != "")
+      query["employee"] = req.body.supplier_id;
+
+    const item = await Order.find(query)
+      .sort({ _id: -1 })
+      .populate("employee")
+      .select();
+
+      _result = lodash(item)
+      .groupBy('employee')
+      .map(function (platform, id) {
+        if (platform && platform.length > 0) {
+          if(platform[0] && platform[0].employee){
+            return {
+              title: platform[0].employee ? platform[0].employee.full_name : "",
+              totalAdmin: lodash.sumBy(platform, 'admin_total'),
+              totalProvider: lodash.sumBy(platform, 'provider_total'),
+              totals: lodash.sumBy(platform, 'total')
+            }
+          }
+        }
+      })
+      .value()
+    var arr = []
+    _result.forEach(element => {
+      if(element){
+        arr.push(element)
+      }
+    });
+    const response = {
+      status: true,
+      code: 200,
+      message: "تمت العملية بنجاح",
+      items: arr
+    };
+    reply.code(200).send(response);
+  } catch (err) {
+    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+    return;
   }
 };

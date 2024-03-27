@@ -602,6 +602,21 @@ exports.getStoresEmployees = async (req, reply) => {
   }
 };
 
+
+exports.getAllEmployees = async (req, reply) => {
+  try {
+    const item = await employee.find({isDeleted:false}).sort({ _id: -1 });
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: item,
+    };
+    reply.send(response);
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
 exports.getEmployees = async (req, reply) => {
   try {
     var page = parseFloat(req.query.page, 10);
