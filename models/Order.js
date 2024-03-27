@@ -9,6 +9,8 @@ const Orderschema = mongoose.Schema(
     order_no: { type: String, required: false },
     tax: { type: Number },
     total: { type: Number, required: false },
+    admin_total: { type: Number, required: false , default: 0},
+    provider_total: { type: Number, required: false, default: 0 },
     new_total: { type: Number, required: false, default: 0 },
     new_tax: { type: Number, required: false, default: 0 },
     totalDiscount: { type: Number },
@@ -19,8 +21,8 @@ const Orderschema = mongoose.Schema(
     dt_time: { type: String },
     couponCode: { type: String },
     paymentType: { type: String },
-    category_id: { type: mongoose.Schema.Types.ObjectId, ref: "category"},
-    sub_category_id: { type: mongoose.Schema.Types.ObjectId, ref: "subcategory"} ,
+    category_id: { type: mongoose.Schema.Types.ObjectId, ref: "main"},
+    sub_category_id: { type: mongoose.Schema.Types.ObjectId, ref: "category"} ,
     extra:{type:[ 
       {
         sub_sub_id: {type: mongoose.Schema.Types.ObjectId, ref: "subcategory"}, 

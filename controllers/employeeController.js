@@ -874,7 +874,9 @@ exports.updateEmploye = async (req, reply) => {
               full_name: req.raw.body.full_name,
               supervisor_id: req.raw.body.supervisor_id,
               password: encryptPassword(req.raw.body.password),
-              supplier_id: supervisor ? supervisor.supplier_id : null
+              supplier_id: supervisor ? supervisor.supplier_id : null,
+              type_id: req.raw.body.type_id,
+              orderPercentage: req.raw.body.orderPercentage
             },
             { new: true, runValidators: true },
             function (err, model) {
@@ -921,7 +923,9 @@ exports.updateEmploye = async (req, reply) => {
               full_name: req.raw.body.full_name,
               supervisor_id: req.raw.body.supervisor_id,
               password: encryptPassword(req.raw.body.password),
-              supplier_id: supervisor ? supervisor.supplier_id : null
+              supplier_id: supervisor ? supervisor.supplier_id : null,
+              type_id: req.raw.body.type_id,
+              orderPercentage: req.raw.body.orderPercentage
             },
             { new: true, runValidators: true },
             function (err, model) {
@@ -1095,6 +1099,8 @@ exports.addEmployee = async (req, reply) => {
         isDeleted: false,
         isVerify: true,
         isAvailable: false,
+        type_id: req.raw.body.type_id,
+        orderPercentage: 0
       });
       var _return = handleError(_newUser.validateSync());
       if (_return.length > 0) {

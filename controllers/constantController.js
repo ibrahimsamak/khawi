@@ -70,6 +70,7 @@ exports.getHomeRequest = async (req, reply) => {
         var obj = {
           type: sec.type,
           action: "none",
+          title:"",
           data: arr2
         }
         home_arr.push(obj);
@@ -121,6 +122,7 @@ exports.getHomeRequest = async (req, reply) => {
         var obj = {
           type: sec.type,
           action: "main_category",
+          title: sec[`${language}Name`],
           data:return_arr
         }
         home_arr.push(obj);
@@ -130,6 +132,7 @@ exports.getHomeRequest = async (req, reply) => {
         const slider = await Adv.find({type:'offer'}).sort({ _id: -1 });
         const sect = await section.findOne({arName: 'العروض'}).sort({ _id: -1 });
         const main = await Main.findOne({section_id: sect._id}).sort({ _id: -1 });
+        console.log(main)
         for await(const element of slider){
           var newObject = element.toObject();
           var obj = {
@@ -144,6 +147,7 @@ exports.getHomeRequest = async (req, reply) => {
         var obj = {
           type:sec.type,
           action: "none",
+          title: "",
           data:arr2
         }
         home_arr.push(obj);
@@ -195,6 +199,7 @@ exports.getHomeRequest = async (req, reply) => {
         var obj = {
           type: sec.type,
           action: "main_category",
+          title: sec[`${language}Name`],
           data:return_arr
         }
         home_arr.push(obj);
@@ -216,6 +221,7 @@ exports.getHomeRequest = async (req, reply) => {
         var obj = {
           type:sec.type,
           action: "none",
+          title: "",
           data:arr2
         }
         home_arr.push(obj);

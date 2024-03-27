@@ -325,7 +325,7 @@ exports.VALIDATION_MESSAGE_ARABIC = {
 
   ALL_REQUIRED: "جميع الحقول مطلوبة",
   WRONG_STATUS: "الرجاء ارسال حالة صحيحة",
-  ACCEPTED_BEFORE : "عذرا .. تم قبول الطلب من قبل سائق اخر"
+  ACCEPTED_BEFORE : "عذرا .. تم قبول الطلب من قبل فني اخر"
 };
 
 exports.getMessageOnLanguage = function (msgAr, msgEn, language) {

@@ -78,7 +78,9 @@ exports.addOrder = async (req, reply) => {
       var total = 0
       var total_discount = 0
       var total_tax = 0
-      
+      var provider_total = 0;
+      var admin_total = 0;
+
       var validationArray = [
         { name: "couponCode" },
         { name: "paymentType" },
@@ -139,7 +141,7 @@ exports.addOrder = async (req, reply) => {
      
           } 
 
-          let check_category= await Product_Price.findOne({$and:[{place_id:PoinInPolygon[0]._id}, { category_id:req.body.category_id }]})
+          let check_category= await Product_Price.findOne({$and:[{place_id:PoinInPolygon[0]._id}, { category_id:req.body.sub_category_id }]})
           if(!check_category){
             let rs = new User_Uncovered({
               user_id: userId,
@@ -232,7 +234,7 @@ exports.addOrder = async (req, reply) => {
           let Orders = new Order({
             lat: req.body.lat,
             lng: req.body.lng,           
-            price: sub_category.price,
+            price: 0,
             address: address,
             order_no: orderNo,
             tax: Number(total_tax),
@@ -263,6 +265,12 @@ exports.addOrder = async (req, reply) => {
           });
 
           let rs = await Orders.save();
+          var all_drivers_same_sub_categoy_id = await employee.find({$and:[{isDeleted:false},{isBlock:false}, {type_id: req.body.sub_category_id}]})
+          var ids_arr = all_drivers_same_sub_categoy_id.map(x=>x.fcmToken);
+          if(ids_arr.length > 0){
+            CreateNotificationMultiple(ids_arr, "طلب جديد" , "لديك طلب جديد .. يرجى اتخاذ اجراء باسرع وقت" , rs._id);
+          }
+
           reply
           .code(200)
           .send(
@@ -586,23 +594,45 @@ exports.updateOrder = async (req, reply) => {
         await CreateGeneralNotification(check.user.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.employee, check.user._id, "", "");
       }
       if(req.body.status == ORDER_STATUS.accpeted) {
+        var admin_total = 0;
+        var provider_total = 0;
         msg = msg_accpet;
         msg2 = msg_accpet2;
-        var emp = await employee.findById(req.body.employee);
+        var emp = await employee.findById(userId);
+        if(check.employee){
+           reply
+          .code(200)
+          .send(
+            errorAPI(
+              language,
+              400,
+              VALIDATION_MESSAGE_ARABIC.ACCEPTED_BEFORE,
+              VALIDATION_MESSAGE_ENGLISH.ACCEPTED_BEFORE
+            )
+          );
+        return;
+        }
+        if(emp){
+          admin_total = Number(emp.orderPercentage) * Number(check.total);
+        }
+        provider_total = Number(check.total) - Number(admin_total);
+
         await Order.findByIdAndUpdate(
           req.params.id,
           {
+            provider_total: provider_total,
+            admin_total: admin_total,
             status: req.body.status,
-            employee: req.body.employee,
+            employee: emp ? emp._id : null,
             supervisor: emp ? emp.supervisor_id : null,
             canceled_note: req.body.canceled_note
           },
           { new: true }
         )
-        if(emp){
-          await CreateGeneralNotification(emp.fcmToken, NOTIFICATION_TITILES.ORDERS, msg2, NOTIFICATION_TYPE.ORDERS, check._id, check.user.fcmToken, check.user._id, "", "");
-        }
         await CreateGeneralNotification(check.user.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.employee, check.user._id, "", "");
+        //if(emp){
+          //await CreateGeneralNotification(emp.fcmToken, NOTIFICATION_TITILES.ORDERS, msg2, NOTIFICATION_TYPE.ORDERS, check._id, check.user.fcmToken, check.user._id, "", "");
+        //}
       }
       if(req.body.status == ORDER_STATUS.updated) {
         var code = "1234"; // makeid(6)
@@ -1797,13 +1827,18 @@ exports.getEmployeeOrder = async (req, reply) => {
       else if(req.body.status == 'canceled' ){
         query.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
       }
-      else{
+      else if(req.body.status == ORDER_STATUS.new ){
+        query = {};
+        query["status"] = ORDER_STATUS.new;
+      }
+      else {
         query.$and.push({status: req.body.status})
       }
     }
     if (req.body.order_no && req.body.order_no != "")
       query["order_no"] = req.body.order_no;
 
+      console.log(query)
     const total = await Order.find(query).countDocuments();
     const item = await Order.find(query)
       .sort({ _id: -1 })

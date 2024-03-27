@@ -79,8 +79,11 @@ const employeeSchema = mongoose.Schema(
       type: Number,
       default: 0
     },
+    orderPercentage: { type: Number },
     supervisor_id: { type: mongoose.Schema.Types.ObjectId, ref: "supervisor", required: [true, "supervisor is required"], },
-    supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: "supplier"}
+    supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: "supplier"},
+    type_id: { type: mongoose.Schema.Types.ObjectId, ref: "category"}
+    
   },
   { versionKey: false }
 );
