@@ -1394,6 +1394,11 @@ const driver_routes = [
     beforeHandler: [auth.getToken],
     handler: employeeController.getSingleEmployee,
   },
+  {
+    method: "POST",
+    url: "/api/driver/logut/:id",
+    handler: employeeController.logout,
+  },
 ];
 
 const routes = [...admin_routes, ...mobile_routes, ...driver_routes];

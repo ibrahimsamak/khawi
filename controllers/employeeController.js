@@ -494,7 +494,6 @@ exports.logout = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {
     const User_id = req.params.id;
-    const checkUser = await employee.findById(req.params.id);
     const user = await employee.findByIdAndUpdate(
       User_id,
       {

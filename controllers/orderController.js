@@ -599,7 +599,7 @@ exports.updateOrder = async (req, reply) => {
         msg = msg_accpet;
         msg2 = msg_accpet2;
         var emp = await employee.findById(userId);
-        if(check.employee){
+        if(!check.employee){
            reply
           .code(200)
           .send(
@@ -960,11 +960,13 @@ exports.getOrderDetails = async (req, reply) => {
     var subCategoryObj = {
       _id: obj.sub_category_id._id,
       title: obj.sub_category_id[`${language}Name`],
+      image: obj.sub_category_id.image,
       price: obj.price
     }
     var categoryObj = {
       _id: obj.category_id._id,
       title: obj.category_id[`${language}Name`],
+      image: obj.category_id.image,
     }
     obj.extra.forEach(element => {
       if(element.sub_sub_id) {
@@ -1897,13 +1899,49 @@ exports.getAllEmployeesOrder = async (req, reply) => {
       .sort({ _id: -1 })
       .skip(page * limit)
       .limit(limit);
+
+      var items = []
+      item.forEach(element => {
+        var arr = []
+        var obj = element.toObject();
+        delete obj.sub_category_id;
+        delete obj.category_id;
+        delete obj.extra;
+        obj.sub_category_id = {
+          _id: element.sub_category_id._id,
+          title: element.sub_category_id[`${language}Name`],
+          description: element.sub_category_id[`${language}Description`],
+          price: element.sub_category_id.price,
+          image: element.sub_category_id.image
+        }
+        obj.category_id = {
+          _id: element.category_id._id,
+          title: element.category_id[`${language}Name`],
+          description: element.category_id[`${language}Description`],
+          image: element.category_id.image
+        }
+        element.extra.forEach(_element => {
+          if(_element.sub_sub_id){
+            var _obj = {
+              _id: _element.sub_sub_id._id,
+              title: _element.sub_sub_id[`${language}Name`],
+              price: _element.sub_sub_id.price,
+              qty: _element.qty
+            }
+            arr.push(_obj)
+          }
+        });
+        obj.extra = arr;
+        items.push(obj);
+      });
+
     reply.code(200).send(
       success(
         language,
         200,
         MESSAGE_STRING_ARABIC.SUCCESS,
         MESSAGE_STRING_ENGLISH.SUCCESS,
-        item,
+        items,
         {
           size: item.length,
           totalElements: total,
