@@ -1890,6 +1890,9 @@ exports.getAllEmployeesOrder = async (req, reply) => {
         q.$and.push({status:req.body.status})
       }
     }
+    if (req.body.order_no && req.body.order_no != "")
+    q.$and.push({ order_no: { $regex: new RegExp(req.body.order_no, "i") }});
+
     const total = await Order.find(q).countDocuments();
     const item = await Order.find(q)
       .populate("user", "-token")
