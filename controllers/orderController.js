@@ -599,7 +599,8 @@ exports.updateOrder = async (req, reply) => {
         msg = msg_accpet;
         msg2 = msg_accpet2;
         var emp = await employee.findById(userId);
-        if(!check.employee){
+        console.log(check.employee)
+        if(check.employee){
            reply
           .code(200)
           .send(
