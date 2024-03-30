@@ -1882,6 +1882,10 @@ exports.getAllEmployeesOrder = async (req, reply) => {
       else if(req.query.status == 'canceled' ){
         q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
       }
+      else if(req.query.status == 'new'){
+        q.$and = []
+        q.$and.push({status: {$in:[ORDER_STATUS.new]}})
+      }
       else{
         q.$and.push({status:req.query.status})
       }
