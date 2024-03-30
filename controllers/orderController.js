@@ -1875,19 +1875,19 @@ exports.getAllEmployeesOrder = async (req, reply) => {
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
     var q = {$and:[{employee: userId}]}
-    if(req.query.status && req.query.status != ""){
-      if(req.query.status == ORDER_STATUS.finished){
+    if(req.body.status && req.body.status != ""){
+      if(req.body.status == ORDER_STATUS.finished){
         q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
       }
-      else if(req.query.status == 'canceled' ){
+      else if(req.body.status == 'canceled' ){
         q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
       }
-      else if(req.query.status == 'new'){
+      else if(req.body.status == 'new'){
         q.$and = []
         q.$and.push({status: {$in:[ORDER_STATUS.new]}})
       }
       else{
-        q.$and.push({status:req.query.status})
+        q.$and.push({status:req.body.status})
       }
     }
     const total = await Order.find(q).countDocuments();
