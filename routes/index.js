@@ -20,6 +20,34 @@ const fastify = require("fastify")({
 const admin_routes = [
   {
     method: "GET",
+    url: "/api/constant/getWalletSettings",
+    handler: constantController.getWalletSettings,
+  },
+  {
+    method: "GET",
+    url: "/api/constant/getSingleWalletSettings/:id",
+    handler: constantController.getSingleWalletSettings,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/addWalletSetting",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.addWalletSetting,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/deleteWalletSetting/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.deleteWalletSetting,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/updateWalletSetting/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.updateWalletSetting,
+  },
+  {
+    method: "GET",
     url: "/api/employee/orders/:id",
     beforeHandler: [auth.getAdminToken],
     handler: orderController.getEmployeesOrder,
@@ -981,6 +1009,18 @@ const admin_routes = [
 //mobile client
 const mobile_routes = [
   {
+    method: "POST",
+    url: "/api/mobile/point/check",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.getWalletSettingsByMinMax,
+  },
+  {
+    method: "POST",
+    url: "/api/mobile/checkout",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.checkout,
+  },
+  {
     method: "GET",
     url: "/api/mobile/rates/:id",
     beforeHandler: [auth.getAdminToken],
@@ -1103,6 +1143,13 @@ const mobile_routes = [
     handler: constantController.addComplains,
   },
   //Users
+  
+  {
+    method: "POST",
+    url: "/api/mobile/user/rechange",
+    beforeHandler: [auth.getToken],
+    handler: userController.RechangePointsToWallet,
+  },
   {
     method: "POST",
     url: "/api/mobile/user/referal",

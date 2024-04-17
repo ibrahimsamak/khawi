@@ -386,9 +386,7 @@ exports.verify = async (req, reply) => {
         $and: [{ user_id: update._id }],
       });
       var newUser = update.toObject();
-      const orders = await Order.find({
-        $and: [{ user_id: update._id }, { StatusId: 4 }],
-      }).countDocuments();
+      const orders = await Order.find({ $and: [{ user_id: update._id }, { StatusId: 4 }] }).countDocuments();
       // const favorits = await Favorite.find({
       //   user_id: update._id,
       // }).countDocuments();
@@ -398,10 +396,10 @@ exports.verify = async (req, reply) => {
 
       var orderNo = `#${utils.makeid(6)}`;
       const settings = await setting.findOne({code:"WALLET_REFERAL"});
-      await NewPayment(update._id, orderNo, "دعوة من احد الأصدقاء", "+" , Number(settings.value), "Online")
+      await NewPayment(update._id, orderNo, "هدية من ادارة تطبيق فزعة", "+" , Number(settings.value), "Online")
       if(req.body.by && req.body.by != "") {
         console.log(req.body.by)
-        await NewPayment(req.body.by, orderNo, "دعوة من احد الأصدقاء", "+", Number(settings.value), "Online")
+        await NewPayment(req.body.by, orderNo, "هدية من ادارة تطبيق فزعة", "+", Number(settings.value), "Online")
       }
 
       reply
@@ -1257,6 +1255,63 @@ exports.Resend = async (req, reply) => {
         newUser
       )
     );
+};
+
+exports.RechangePointsToWallet = async (req, reply) => {
+  const language = req.headers["accept-language"];
+
+  const checkUser = await Users.findById(req.user._id);
+  if (!checkUser) {
+    reply
+      .code(200)
+      .send(
+        errorAPI(
+          language,
+          400,
+          MESSAGE_STRING_ARABIC.USER_NOT_FOUND,
+          MESSAGE_STRING_ENGLISH.USER_NOT_FOUND
+        )
+      );
+    return;
+  }
+  const _walletsettings = await walletsettings.findOne({
+    $and: [
+      {
+        min: { $lte: Number(checkUser.points) },
+      },
+      {
+        max: { $gte: Number(checkUser.points) },
+      },
+    ],
+  });
+  if(_walletsettings){
+    await NewPayment(checkUser._id, "", "تبديل النقاط الى المحفظة", "+", Number(_walletsettings.value), "Online")
+   var newUser = await Users.findByIdAndUpdate(checkUser._id, { points: 0 }, { new: true });
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        newUser
+      )
+    );
+  }else{
+    reply
+      .code(200)
+      .send(
+        errorAPI(
+          language,
+          400,
+          MESSAGE_STRING_ARABIC.ERROR,
+          MESSAGE_STRING_ENGLISH.ERROR
+        )
+      );
+    return;
+  }
+
 };
 
 exports.AddSMS = async (req, reply) => {

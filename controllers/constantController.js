@@ -1103,9 +1103,53 @@ exports.getSettings = async (req, reply) => {
   }
 };
 
+
+exports.getWalletSettingsByMinMax = async (req, reply) => {
+  try {
+    const userId = req.user._id
+    var _user = await Users.findById(userId);
+    const _walletsettings = await walletsettings.findOne({
+      $and: [
+        {
+          min: { $lte: Number(_user.points) },
+        },
+        {
+          max: { $gte: Number(_user.points) },
+        },
+      ],
+    });
+
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: _walletsettings,
+    };
+    reply.code(200).send(response);
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+
 exports.getWalletSettings = async (req, reply) => {
   try {
     const settings = await walletsettings.find().sort({ _id: -1 });
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: settings,
+    };
+    reply.code(200).send(response);
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getSingleWalletSettings = async (req, reply) => {
+  try {
+    const settings = await walletsettings.findById(req.params.id).sort({ _id: -1 });
     const response = {
       status_code: 200,
       status: true,
@@ -1447,7 +1491,6 @@ exports.updateWalletSetting = async (req, reply) => {
         value: req.body.value,
         max: req.body.max,
         min: req.body.min,
-        supplier_id: req.body.supplier_id,
       },
       { new: true, runValidators: true },
       function (err, model) {
@@ -1471,7 +1514,7 @@ exports.updateWalletSetting = async (req, reply) => {
         200,
         MESSAGE_STRING_ARABIC.SUCCESS,
         MESSAGE_STRING_ENGLISH.SUCCESS,
-        rs
+        {}
       )
     );
   } catch (err) {

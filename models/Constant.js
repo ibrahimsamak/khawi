@@ -152,7 +152,7 @@ const walletsettings = mongoose.Schema(
     //3: wallet
     type: {
       type: Number,
-      required: [true, "type is required"],
+      //required: [true, "type is required"],
     },
   },
   { versionKey: false }

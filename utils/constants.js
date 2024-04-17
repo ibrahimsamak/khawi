@@ -145,7 +145,7 @@ exports.MESSAGE_STRING_ENGLISH = {
   COUPON_ERROR: "Invalid Coupon",
   RESERVATION_EXSIT: "Sorry ... This item is already in reservations",
   INVALID_PAYMENT: "Sorry ... The selected package has expired",
-  EMPTY_CART: "Sorry .. Cart is empty",
+  EMPTY_Points: "Sorry .. Cart is empty",
   ENTER_STATUS: "Status is required",
   ERROR_RATE: "Sorry .. you can't rate righ now",
   RATE_BEFORE: "Order has been rated before",

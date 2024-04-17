@@ -97,7 +97,7 @@ exports.addOrder = async (req, reply) => {
           const userObj = await Users.findById(userId);
           const tax = await setting.findOne({ code: "TAX" });
           const sub_category = await SubCategory.findById(req.body.sub_category_id);
-          var orderNo = `${makeOrderNumber(6)}`;
+          var orderNo = req.body.orderNo ? req.body.orderNo : `${makeOrderNumber(6)}`;
           var _supplier = null;
           var _employee = null;
 
@@ -665,6 +665,8 @@ exports.updateOrder = async (req, reply) => {
       }
       if(req.body.status == ORDER_STATUS.finished) {
         msg = msg_finished;
+        let _point = await setting.findOne({code:"POINT"});
+        await NewPoint(userId,  Number(_point.value));
         await CreateGeneralNotification(check.user.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.employee, check.user._id, "", "");
       }     
       if(req.body.status == ORDER_STATUS.canceled_by_driver && check.status != ORDER_STATUS.prefinished && check.status != ORDER_STATUS.finished && check.status != ORDER_STATUS.rated){
@@ -813,6 +815,7 @@ exports.getUserOrder = async (req, reply) => {
     }
     
     var arr = []
+    let _point = await setting.findOne({code:"POINT"});
     const total = await Order.find(query).countDocuments();
     const item = await Order.find(query)
     .populate("user", "-token")
@@ -859,6 +862,7 @@ exports.getUserOrder = async (req, reply) => {
         }
       });
       obj.extra = arr;
+      obj.points = Number(_point.value);
       items.push(obj);
     });
     
@@ -1940,6 +1944,7 @@ exports.getAllEmployeesOrder = async (req, reply) => {
           }
         });
         obj.extra = arr;
+        obj.points = 0;
         items.push(obj);
       });
 
@@ -3308,5 +3313,193 @@ exports.getOrdersPercentage = async (req, reply) => {
   } catch (err) {
     reply.code(200).send(errorAPI(language, 400, err.message, err.message));
     return;
+  }
+};
+
+
+//payment getway
+exports.checkout = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    var userId = req.user._id;
+    var givenName = "";
+    var surName = "";
+    var orderNo = `${makeOrderNumber(6)}`;
+    const tax = await setting.findOne({ code: "TAX" });
+
+    // var amount = 0;
+    var _id = new mongoose.Types.ObjectId().toHexString();
+    var amount = Number(req.body.amount).toFixed(2);
+    var tax_amount = Number(amount)*Number(tax.value)
+    let userData = await Users.findById(userId);
+
+    givenName = userData.full_name.trim();
+    surName = userData.full_name.trim();
+    //tye: 1:visa , 2:mada, 3:apple
+  
+    var items = []
+    for await(var i of req.body.extra){
+      const _sub_category = await SubCategory.findById(i.sub_sub_id);
+      var enName = _sub_category.enName;
+      var _total_price = Number(_sub_category.price) * Number(i.qty)
+      var _tax_amount = Number(_sub_category.price) * Number(tax.value)
+      var obj =   {
+        "name": enName,
+        "type": "Digital",
+        "reference_id": _sub_category._id,
+        "sku": _sub_category._id,
+        "quantity": Number(i.qty),
+        "discount_amount": {
+          "amount": 0,
+          "currency": "SAR"
+        },
+        "tax_amount": {
+          "amount": Number(_tax_amount),
+          "currency": "SAR"
+        },
+        "total_amount": {
+          "amount": Number(_total_price),
+          "currency": "SAR"
+        }
+      }
+      items.push(obj)
+    }
+
+    console.log(items)
+
+    var body = {
+      "total_amount": {
+        "amount": Number(amount),
+        "currency": "SAR"
+      },
+      "shipping_amount": {
+        "amount": 0,
+        "currency": "SAR"
+      },
+      "tax_amount": {
+        "amount": tax_amount,
+        "currency": "SAR"
+      },
+      "order_reference_id": orderNo,
+      "order_number": orderNo,
+      "discount": {
+        "name": "",
+        "amount": {
+          "amount": 0,
+          "currency": "SAR"
+        }
+      },
+      "items": items,
+      "consumer": {
+        "email": userData.email,
+        "first_name": givenName ,
+        "last_name": surName,
+        "phone_number": userData.phone_number
+      },
+      "country_code": "SA",
+      "description": "description",
+      "merchant_url": {
+        "cancel": "https://www.google.com",
+        "failure": "https://www.google.com",
+        "success": "https://www.faz3h.com",
+        "notification": "https://www.faz3h.com"
+      },
+      "payment_type": "PAY_BY_INSTALMENTS",
+      "instalments": 3,
+      "billing_address": {
+        "city": "Riyadh",
+        "country_code": "SA",
+        "first_name": givenName,
+        "last_name": surName,
+        "line1": "Riyadh",
+        "line2": "",
+        "phone_number": userData.phone_number,
+        "region": ""
+      },
+      "shipping_address": {
+        "city": "Riyadh",
+        "country_code": "SA",
+        "first_name": givenName,
+        "last_name": surName,
+        "line1": "Riyadh",
+        "line2": "",
+        "phone_number": userData.phone_number,
+        "region": ""
+      },
+      "platform": "Fazaa",
+      "is_mobile": true,
+      "locale": "en_US"
+    }
+
+    console.log(body)
+    var url = `https://api.tamara.co/checkout`
+    let _config = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhY2NvdW50SWQiOiIwNDI2ZWMyMC0xOWMzLTQxNzEtOTA0Zi1mYWIyZjdlY2UzM2MiLCJ0eXBlIjoibWVyY2hhbnQiLCJzYWx0IjoiZmIzMzIyM2Y3MzFmNTQ4MGI0YzhlYTM1NDg5MTFjNTUiLCJyb2xlcyI6WyJST0xFX01FUkNIQU5UIl0sImlhdCI6MTcxMjUxNTM0OCwiaXNzIjoiVGFtYXJhIFBQIn0.doK9s4_Cp7UApXOb31Y2DBcWKLXbU4X0ju-IF7Tlh3wx2VQwm5wctUAU2-75Kdvp7XRKXew2Vx79CEE-JZZqd5qQ3D3zeFnShA-16tLrsjolpVbfI0dY6lsE8vbL7-Ge93vsIYQ9T8G4V8SzH_h7J_C532pJ-C8MW7gzTH9GRlaTA7FHWMWoR332hmTuA8L_qPuHUUY7KHtOUgGv6rhXJPGHz8Tx-rMEoxyTOmZuEM905BbR_wmpToyvAZGoJ1mxosCwBdwb1Giw5YhmXPpTUAGs13OwmqqAo-Tlm70nSNp6CwrMqNf_RRszgoNwIXQfSOT0rPQUvpiZSwmcchCKQg",
+      },
+    };
+
+  
+
+    axios
+      .post(url, body, _config)
+      .then(async (response) => {
+        console.log(response.data);
+        // let result = response.data;
+        // var obj = result;
+        // obj.payment_order_id = _id;
+        // obj.order_no = orderNo;
+        // obj.amount = final_total;
+        // var regex1 = /^(000\.000\.|000\.100\.1|000\.[36])/;
+        // var regex2 = /^(000\.400\.0[^3]|000\.400\.100)/;
+        // var regex3 = /^(000\.200)/;
+        // var regex4 = /^(800\.400\.5|100\.400\.500)/;
+        // if (
+        //   regex1.test(result.result.code) ||
+        //   regex2.test(result.result.code) ||
+        //   regex3.test(result.result.code) ||
+        //   regex4.test(result.result.code)
+        // ) {
+        //   const response = {
+        //     items: obj,
+        //     status: true,
+        //     status_code: 200,
+        //     messageAr: result.result.description,
+        //     messageEn: result.result.description,
+        //   };
+        //   reply.code(200).send(response);
+        // } else {
+        //   const response = {
+        //     items: obj,
+        //     status: false,
+        //     status_code: 400,
+        //     messageAr: result.result.description,
+        //     messageEn: result.result.description,
+        //   };
+        //   reply.code(200).send(response);
+        //   return;
+        // }
+
+        var obj = response.data;
+        obj.orderNo = orderNo
+        reply
+        .code(200)
+        .send(
+          success(
+            language,
+            200,
+            MESSAGE_STRING_ARABIC.SUCCESS,
+            MESSAGE_STRING_ENGLISH.SUCCESS,
+            obj
+          )
+        );
+      })
+      .catch((error) => {
+        reply.code(200).send(errorAPI(language, 400, MESSAGE_STRING_ARABIC.ERROR, MESSAGE_STRING_ENGLISH.ERROR));
+        return;
+      });
+  } catch (err) {
+    throw boom.boomify(err);
   }
 };
