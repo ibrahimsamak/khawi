@@ -3198,7 +3198,7 @@ exports.checkCurrentPlace = async (req, reply) => {
             400,
             MESSAGE_STRING_ARABIC.NOT_COVERED,
             MESSAGE_STRING_ENGLISH.NOT_COVERED,
-            {}
+            null
           )
         );
       return;
